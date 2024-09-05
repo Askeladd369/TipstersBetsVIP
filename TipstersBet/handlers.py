@@ -378,7 +378,7 @@ def register_handlers(app: Client):
 
 
         # Construir el mensaje con solo las estadísticas disponibles
-        stats_message = f"Tipster: {category}{semaforo}\n Control de apuestas\n"
+        stats_message = f"Tipster: {category}{semaforo}\n Control de apuestas👇\n"
         if bank_inicial is not None:
             stats_message += f"Bank Inicial 🏦: ${bank_inicial:.2f} 💵\n"
         if bank_actual is not None:
