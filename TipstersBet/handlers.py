@@ -358,9 +358,14 @@ def register_handlers(app: Client):
 
         # Obtener la racha
         racha = stats.get('Dias en racha', 0)
-        if pd.notna(racha):
-            racha = int(racha)
+        if racha is None or not isinstance(racha, (int, float)):
+            racha = 0  # Asignar 0 si no es un número válido
+        else:
+            racha = int(racha)  # Convertir a entero si es necesario
+
+        # Generar los emojis correspondientes a la racha
         racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '')
+
 
         stats_message = (
             f"Tipster: {category} {semaforo}\n"
