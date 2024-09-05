@@ -5,36 +5,25 @@ import sqlite3
 import config
 import pyrogram
 
-# Función para cargar los tipsters desde un archivo Exce
-
-
 def load_tipsters_from_excel(excel_file):
     try:
-        # Cargar el archivo Excel en un DataFrame
         df = pd.read_excel(excel_file)
-        
-        # Verificar que la columna 'Grupo' existe
-        if 'Grupo' not in df.columns:
-            print("[ERROR] La columna 'Grupo' no existe en el archivo Excel.")
-            return pd.DataFrame(), []
-        
-        # Obtener la lista única de grupos
-        grupos = df['Grupo'].unique().tolist()
-        
+        grupos = df['Grupo'].unique().tolist() if 'Grupo' in df.columns else []
         return df, grupos
     except Exception as e:
-        print(f"Error al cargar el archivo Excel: {e}")
-        return pd.DataFrame(), []  # Retornar un DataFrame vacío y una lista vacía en caso de error
+        logging.error(f"Error al cargar el archivo Excel: {e}")
+        return pd.DataFrame(), []
 
-# Función para cargar los canales desde la hoja "Channels"
 def load_channels_from_excel(excel_file):
     try:
+        # Asegurarse de que las columnas son 'Grupo' y 'Canal_ID'
         channels_df = pd.read_excel(excel_file, sheet_name='Channels')
         channels_dict = pd.Series(channels_df.Canal_ID.values, index=channels_df.Grupo).to_dict()
         return channels_dict
     except Exception as e:
         logging.error(f"Error al cargar la hoja de canales: {e}")
         return {}
+
 
 def load_groups_from_excel(excel_file):
     try:
@@ -94,6 +83,7 @@ def get_tipsters_by_group(df, group_name):
     return df[df['Grupo'] == group_name]
 
 # Función para agregar marca de agua a la imagen
+# Función para agregar marca de agua a la imagen
 def add_watermark(input_image_path, watermark_image_path, semaphore, stars):
     from PIL import Image, ImageDraw
     import io
@@ -123,6 +113,7 @@ def add_watermark(input_image_path, watermark_image_path, semaphore, stars):
     output.seek(0)
 
     return output
+
 
 def get_user(user_id):
     with sqlite3.connect("bot_database.db") as conn:

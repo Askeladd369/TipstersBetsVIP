@@ -11,11 +11,17 @@ import random, string
 import re
 import pandas as pd
 
+CANAL_PRIVADO_ID = -1002431937420  # Coloca aquí el ID de tu canal privado
+
 # Función para generar código de invitación
 def generate_invitation_code():
     code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     print(f"[DEBUG] - Código generado: {code}")
     return code
+
+def split_message(text, max_chars=4096):
+    """Divide un mensaje en partes más pequeñas si excede el límite de caracteres permitido."""
+    return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
 
 # Registro de handlers en la aplicación
 def register_handlers(app: Client):
@@ -166,8 +172,14 @@ def register_handlers(app: Client):
 
             message_text += "\n"
 
-        await callback_query.message.edit_text(message_text)
+        # Dividir el mensaje si es muy largo
+        message_parts = split_message(message_text)
 
+        # Enviar las partes del mensaje, una tras otra
+        for part in message_parts:
+            await callback_query.message.reply_text(part)
+
+        # Construir los botones para activar/desactivar tipsters
         buttons = []
         with sqlite3.connect("bot_database.db") as conn:
             cursor = conn.cursor()
@@ -194,7 +206,6 @@ def register_handlers(app: Client):
         buttons.append([InlineKeyboardButton("🔙 Volver", callback_data="user_main_menu")])
         await callback_query.message.reply_text("Selecciona un Tipster para activar o desactivar:", reply_markup=InlineKeyboardMarkup(buttons))
         await callback_query.answer()
-
 
     @app.on_callback_query(filters.regex(r"toggle_all_alta_efectividad"))
     async def toggle_all_alta_efectividad(client, callback_query):
@@ -310,13 +321,89 @@ def register_handlers(app: Client):
         await callback_query.message.edit_text("Usuarios suscritos:", reply_markup=InlineKeyboardMarkup(buttons))
         await callback_query.answer()
 
-    # Modificar el handler para enviar los mensajes a los canales correspondientes
-    @app.on_message((filters.media_group | filters.photo) & filters.create(lambda _, __, m: m.from_user and is_admin(m.from_user.id)))
+    async def process_image_and_send(client, message, tipster_name, tipsters_df, channels_dict):
+        tipster_stats = tipsters_df[tipsters_df['Nombre'].str.lower() == tipster_name.lower()]
+
+        if tipster_stats.empty:
+            await message.reply(f"No se encontraron estadísticas para el tipster '{tipster_name}'.")
+            return
+
+        stats = tipster_stats.iloc[0]
+
+        # Obtener estadísticas (evitando NaN)
+        bank_inicial = stats.get('Bank Inicial', None)
+        bank_actual = stats.get('Bank Actual', None)
+        victorias = stats.get('Victorias', None)
+        derrotas = stats.get('Derrotas', None)
+        efectividad = stats.get('Efectividad', None)
+        racha = stats.get('Dias en racha', 0)
+
+
+                # Asignar el semáforo basado en la columna 'Efectividad'
+        efectividad = stats.get('Efectividad', 0)
+        if efectividad > 65:
+            semaforo = '🟢'
+        elif 50 <= efectividad <= 65:
+            semaforo = '🟡'
+        else:
+            semaforo = '🔴'
+
+        # Procesar racha
+        if pd.isna(racha) or not isinstance(racha, (int, float)):
+            racha = 0
+        else:
+            racha = int(racha)
+
+        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '')
+
+        # Crear el mensaje
+        stats_message = f"Tipster: {tipster_name}{semaforo}\n Control de apuestas👇\n"
+        if bank_inicial is not None:
+            stats_message += f"Bank Inicial 🏦: ${bank_inicial:.2f} 💵\n"
+        if bank_actual is not None:
+            stats_message += f"Bank Actual 🏦: ${bank_actual:.2f} 💵\n"
+        if victorias is not None:
+            stats_message += f"Victorias: {victorias} ✅\n"
+        if derrotas is not None:
+            stats_message += f"Derrotas: {derrotas} ❌\n"
+        if efectividad is not None:
+            stats_message += f"Efectividad: {efectividad}% 📊\n"
+        if racha:
+            stats_message += f"Racha: {racha} días {racha_emoji}"
+
+        # Procesar la imagen y agregar la marca de agua
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
+            watermarked_image = add_watermark(photo, "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png", racha_emoji, racha)
+
+        # Enviar a los usuarios que tienen activado este tipster
+        with sqlite3.connect("bot_database.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (tipster_name,))
+            users = cursor.fetchall()
+
+            for user in users:
+                await client.send_photo(user[0], watermarked_image, caption=stats_message)
+
+        # Enviar al canal correspondiente del grupo
+        group_name = stats.get('Grupo', None)
+        channel_id = channels_dict.get(group_name)
+        if channel_id:
+            await client.send_photo(channel_id, watermarked_image, caption=stats_message)
+
+        # Enviar al canal de alta efectividad si corresponde
+        if efectividad and efectividad > 65 and 'Alta Efectividad' in channels_dict:
+            await client.send_photo(channels_dict['Alta Efectividad'], watermarked_image, caption=stats_message)
+
+        os.remove(tmp_file.name)
+
+
+    @app.on_message((filters.media_group | filters.photo) & filters.create(lambda _, __, m: m.from_user is not None and is_admin(m.from_user.id)))
     async def handle_image_group(client, message):
         # Cargar el archivo Excel
         excel_file = "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx"
         tipsters_df, _ = load_tipsters_from_excel(excel_file)
-        channels_dict = load_channels_from_excel(excel_file)
+        channels_dict = load_channels_from_excel(excel_file)  # Asegúrate de que esta función cargue los canales correctamente
 
         if message.media_group_id:
             if not hasattr(client, 'media_groups_processed'):
@@ -324,7 +411,7 @@ def register_handlers(app: Client):
 
             if message.media_group_id in client.media_groups_processed:
                 return
-                
+                    
             client.media_groups_processed[message.media_group_id] = True
 
             media_group = await client.get_media_group(message.chat.id, message.id)
@@ -356,10 +443,7 @@ def register_handlers(app: Client):
         else:
             semaforo = '🔴'
 
-        # Obtener la racha
-        racha = stats.get('Dias en racha', 0)
-
-            # Obtener las estadísticas del tipster
+        # Obtener las estadísticas del tipster
         bank_inicial = stats.get('Bank Inicial', None)
         bank_actual = stats.get('Bank Actual', None)
         victorias = stats.get('Victorias', None)
@@ -367,15 +451,12 @@ def register_handlers(app: Client):
         efectividad = stats.get('Efectividad', None)
         racha = stats.get('Dias en racha', None)
 
-        # Si racha es NaN (Not a Number), se asigna 0
         if pd.isna(racha) or not isinstance(racha, (int, float)):
             racha = 0  # Asignar 0 si no es un número válido
         else:
-            racha = int(racha)  # Convertir a entero si es necesario
+            racha = int(racha)
 
-        # Generar los emojis correspondientes a la racha
-        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha and racha >= 5 else '') if racha else ''
-
+        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha else ''
 
         # Construir el mensaje con solo las estadísticas disponibles
         stats_message = f"Tipster: {category}{semaforo}\n Control de apuestas👇\n"
@@ -418,7 +499,7 @@ def register_handlers(app: Client):
 
         # Enviar al canal correspondiente si está configurado
         group_name = stats.get('Grupo')
-        channel_id = channels_dict.get(group_name)
+        channel_id = channels_dict.get(group_name)  # Asegurarse de que obtenga el canal correcto
 
         if channel_id:
             for img in processed_images:
@@ -431,6 +512,20 @@ def register_handlers(app: Client):
 
         if message.media_group_id:
             del client.media_groups_processed[message.media_group_id]
+
+
+
+    @app.on_message(filters.channel & filters.chat(CANAL_PRIVADO_ID))
+    async def handle_channel_images(client, message):
+        caption = message.caption
+        if not caption:
+            await message.reply("No se detectó nombre de tipster en la imagen.")
+            return
+
+        tipsters_df, _ = load_tipsters_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
+        channels_dict = load_channels_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
+
+        await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
 
 
 

@@ -14,3 +14,13 @@ admin_id2 = 1209577470  # Lista de IDs de administradores secundarios
 bot_id= 7165468466
 excel_path ="C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx"
 
+"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\TipstersBet\\watermark.png"
+
+"C:\\Users\\Administrator\\SendTipsters\\Bot Reventas\\excel.xlsx"
+
+"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot Reventas\\excel.xlsx"
+
+"C:\\Users\\Administrator\\SendTipsters\\Bot Reventas\\el de los picks.png"
+
+"C:\\Users\\Administrator\\SendTipsters\\Bot Reventas\\master.png"
+
