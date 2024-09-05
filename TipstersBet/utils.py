@@ -74,8 +74,8 @@ user_states = UserState()
 
 # Función para mostrar el menú principal
 async def show_main_button_menu(client, message):
-    df = load_tipsters_from_excel("C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado 2\\excel ejemplo.xlsx")
-    grupos = load_groups_from_excel("C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado 2\\excel ejemplo.xlsx")
+    df = load_tipsters_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
+    grupos = load_groups_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
 
     if "Grupo Alta Efectividad 📊" not in grupos:
         grupos.append("Grupo Alta Efectividad 📊")

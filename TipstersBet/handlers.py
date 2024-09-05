@@ -103,7 +103,7 @@ def register_handlers(app: Client):
     @app.on_callback_query(filters.regex(r"main_(Button\d+)_select"))
     async def handle_main_button_selection(client, callback_query):
         # Cargar los grupos dinámicamente desde el archivo Excel
-        tipsters_df, grupos = load_tipsters_from_excel("C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado 2\\excel ejemplo.xlsx")
+        tipsters_df, grupos = load_tipsters_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
         
         # Verifica que la lista esté correctamente poblada
         if not grupos:
@@ -199,7 +199,7 @@ def register_handlers(app: Client):
     @app.on_callback_query(filters.regex(r"toggle_all_alta_efectividad"))
     async def toggle_all_alta_efectividad(client, callback_query):
         user_id = callback_query.from_user.id
-        tipsters_df, grupos = load_tipsters_from_excel("C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado 2\\excel ejemplo.xlsx")
+        tipsters_df, grupos = load_tipsters_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
 
         with sqlite3.connect("bot_database.db") as conn:
             cursor = conn.cursor()
@@ -314,7 +314,7 @@ def register_handlers(app: Client):
     @app.on_message((filters.media_group | filters.photo) & filters.create(lambda _, __, m: m.from_user and is_admin(m.from_user.id)))
     async def handle_image_group(client, message):
         # Cargar el archivo Excel
-        excel_file = "C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado 2\\excel ejemplo.xlsx"
+        excel_file = "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx"
         tipsters_df, _ = load_tipsters_from_excel(excel_file)
         channels_dict = load_channels_from_excel(excel_file)
 
@@ -379,13 +379,13 @@ def register_handlers(app: Client):
                 if media.photo:
                     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                         photo = await client.download_media(media.photo.file_id, file_name=tmp_file.name)
-                        watermarked_image = add_watermark(photo, "C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado\\watermark.png", semaforo, racha)
+                        watermarked_image = add_watermark(photo, "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png", semaforo, racha)
                         processed_images.append(watermarked_image)
                     os.remove(tmp_file.name)
         else:
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
-                processed_images = [add_watermark(photo, "C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado\\watermark.png", semaforo, racha)]
+                processed_images = [add_watermark(photo, "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png", semaforo, racha)]
             os.remove(tmp_file.name)
 
         # Enviar a los usuarios que tienen activado este tipster
