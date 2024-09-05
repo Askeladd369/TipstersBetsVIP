@@ -358,7 +358,9 @@ def register_handlers(app: Client):
 
         # Obtener la racha
         racha = stats.get('Dias en racha', 0)
-        if racha is None or not isinstance(racha, (int, float)):
+
+        # Si racha es NaN (Not a Number), se asigna 0
+        if pd.isna(racha) or not isinstance(racha, (int, float)):
             racha = 0  # Asignar 0 si no es un número válido
         else:
             racha = int(racha)  # Convertir a entero si es necesario
