@@ -359,6 +359,14 @@ def register_handlers(app: Client):
         # Obtener la racha
         racha = stats.get('Dias en racha', 0)
 
+            # Obtener las estadísticas del tipster
+        bank_inicial = stats.get('Bank Inicial', None)
+        bank_actual = stats.get('Bank Actual', None)
+        victorias = stats.get('Victorias', None)
+        derrotas = stats.get('Derrotas', None)
+        efectividad = stats.get('Efectividad', None)
+        racha = stats.get('Dias en racha', None)
+
         # Si racha es NaN (Not a Number), se asigna 0
         if pd.isna(racha) or not isinstance(racha, (int, float)):
             racha = 0  # Asignar 0 si no es un número válido
@@ -366,19 +374,23 @@ def register_handlers(app: Client):
             racha = int(racha)  # Convertir a entero si es necesario
 
         # Generar los emojis correspondientes a la racha
-        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '')
+        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha and racha >= 5 else '') if racha else ''
 
 
-        stats_message = (
-            f"Tipster: {category} {semaforo}\n"
-            f"Control de apuestas 👇\n"
-            f"Bank Inicial 🏦: ${stats.get('Bank Inicial', 'N/A')} 💵\n"
-            f"Bank Actual 🏦: ${stats.get('Bank Actual', 'N/A')} 💵\n"
-            f"Victorias: {stats.get('Victorias', 'N/A')} ✅\n"
-            f"Derrotas: {stats.get('Derrotas', 'N/A')} ❌\n"
-            f"Efectividad: {efectividad}% 📊\n"
-            f"Dias en racha: {racha} días {racha_emoji}"
-        )
+        # Construir el mensaje con solo las estadísticas disponibles
+        stats_message = f"Estadísticas de {category} 👇\n"
+        if bank_inicial is not None:
+            stats_message += f"Bank Inicial 🏦: ${bank_inicial:.2f} 💵\n"
+        if bank_actual is not None:
+            stats_message += f"Bank Actual 🏦: ${bank_actual:.2f} 💵\n"
+        if victorias is not None:
+            stats_message += f"Victorias: {victorias} ✅\n"
+        if derrotas is not None:
+            stats_message += f"Derrotas: {derrotas} ❌\n"
+        if efectividad is not None:
+            stats_message += f"Efectividad: {efectividad}% 📊\n"
+        if racha:
+            stats_message += f"Racha: {racha} días {racha_emoji}"
 
         processed_images = []
         if message.media_group_id:
