@@ -12,5 +12,5 @@ channel_alta_efectividad = -1002131916769  # Reemplaza con el ID del canal para 
 admin_id = 1142604997  # Tu ID de Telegram
 admin_id2 = 1209577470  # Lista de IDs de administradores secundarios
 bot_id= 7165468466
-excel_path ="C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado 2\\excel ejemplo.xlsx"
-"C:\\Users\\saidd\\OneDrive\\Escritorio\\Bot de Telegram pruebas\\Bot separado\\watermark.png"
+excel_path ="C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx"
+
