@@ -11,7 +11,6 @@ import random, string
 import re
 import pandas as pd
 
-CANAL_PRIVADO_ID = -1002431937420  # Coloca aquí el ID de tu canal privado
 
 # Función para generar código de invitación
 def generate_invitation_code():
@@ -19,6 +18,7 @@ def generate_invitation_code():
     print(f"[DEBUG] - Código generado: {code}")
     return code
 
+#Funcion para dividir los botones de tipsters
 def split_message(text, max_chars=4096):
     """Divide un mensaje en partes más pequeñas si excede el límite de caracteres permitido."""
     return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
@@ -61,24 +61,24 @@ def register_handlers(app: Client):
             await message.reply(
                 f"¡Bienvenido, {user_name}! Has activado tu membresía VIP. Tu suscripción durará {duration} días. Escribe el comando /categories para seleccionar a los tipsters que quieres recibir."
             )
-
+    #callback admin menu
     @app.on_callback_query(filters.regex(r"admin_menu") & filters.create(lambda _, __, m: is_admin(m.from_user.id)))
     async def show_admin_menu(client, callback_query):
         await admin_menu(client, callback_query.message)
         await callback_query.answer()
-
+    #callback menu user
     @app.on_callback_query(filters.regex(r"user_main_menu"))
     async def show_main_button_menu_callback(client, callback_query):
         # Aquí llamamos a la función que muestra el menú principal de botones.
         await show_main_button_menu(client, callback_query.message)
         await callback_query.answer()
-
+    #handler codigo de invitacion
     @app.on_callback_query(filters.regex(r"generate_invitation_code") & filters.create(lambda _, __, m: is_admin(m.from_user.id)))
     async def handle_generate_invitation_code(client, callback_query):
         await callback_query.message.reply("Por favor, introduce la duración (en días) para el código de invitación:")
         user_states.set(callback_query.from_user.id, "awaiting_invitation_duration")
         await callback_query.answer()
-
+    #handler duracion del codigo de invitacion
     @app.on_message(filters.text & filters.create(lambda _, __, m: is_admin(m.from_user.id) and user_states.get(m.from_user.id) == "awaiting_invitation_duration"))
     async def handle_invitation_duration(client, message):
         try:
@@ -95,7 +95,7 @@ def register_handlers(app: Client):
         except ValueError:
             await message.reply("Por favor, introduce un número válido para la duración en días.")
             user_states.set(message.from_user.id, "awaiting_invitation_duration")
-
+    #Menu de admin
     @app.on_message(filters.command("admin") & filters.create(lambda _, __, m: is_admin(m.from_user.id)))
     async def admin_menu(client, message):
         buttons = [
@@ -106,10 +106,11 @@ def register_handlers(app: Client):
         
         await message.reply("Menú de administración:", reply_markup=InlineKeyboardMarkup(buttons))
 
+    #carga los botones del excel
     @app.on_callback_query(filters.regex(r"main_(Button\d+)_select"))
     async def handle_main_button_selection(client, callback_query):
         # Cargar los grupos dinámicamente desde el archivo Excel
-        tipsters_df, grupos = load_tipsters_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
+        tipsters_df, grupos = load_tipsters_from_excel(config.excel_path)
         
         # Verifica que la lista esté correctamente poblada
         if not grupos:
@@ -204,39 +205,44 @@ def register_handlers(app: Client):
                 ])
 
         buttons.append([InlineKeyboardButton("🔙 Volver", callback_data="user_main_menu")])
-        await callback_query.message.reply_text("Selecciona un Tipster para activar o desactivar:", reply_markup=InlineKeyboardMarkup(buttons))
-        await callback_query.answer()
+        await callback_query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+        await callback_query.answer("Botones actualizados.")
 
     @app.on_callback_query(filters.regex(r"toggle_all_alta_efectividad"))
     async def toggle_all_alta_efectividad(client, callback_query):
         user_id = callback_query.from_user.id
-        tipsters_df, grupos = load_tipsters_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
+        tipsters_df, grupos = load_tipsters_from_excel(config.excel_path)
 
         with sqlite3.connect("bot_database.db") as conn:
             cursor = conn.cursor()
             
+            # Verificar el estado actual de "Alta Efectividad"
             cursor.execute("SELECT receive_all_alta_efectividad FROM users WHERE user_id = ?", (user_id,))
             receive_all = cursor.fetchone()[0]
-
+            
             if receive_all:
-                # Desactivar la recepción de todos los tipsters de alta efectividad
+                # Desactivar todos los tipsters de alta efectividad
                 cursor.execute("""
                     DELETE FROM user_tipsters 
-                    WHERE user_id = ? AND tipster_name IN (SELECT name FROM tipsters WHERE Efectividad > 65)
+                    WHERE user_id = ? AND tipster_name IN (SELECT Nombre FROM tipsters WHERE Efectividad > 65)
                 """, (user_id,))
+                print(f"[DEBUG] Desactivando todos los tipsters de alta efectividad para el usuario {user_id}.")
                 cursor.execute("UPDATE users SET receive_all_alta_efectividad = 0 WHERE user_id = ?", (user_id,))
+                conn.commit()
+                print(f"[DEBUG] Estado de 'receive_all_alta_efectividad' actualizado a 0 para el usuario {user_id}.")
                 await callback_query.answer("Has desactivado todos los tipsters de Alta Efectividad.")
             else:
-                # Activar la recepción de todos los tipsters de alta efectividad
+                # Activar todos los tipsters de alta efectividad
                 cursor.executemany("""
                     INSERT INTO user_tipsters (user_id, tipster_name) 
                     VALUES (?, ?)
                     ON CONFLICT DO NOTHING
                 """, [(user_id, tipster['Nombre']) for _, tipster in tipsters_df[tipsters_df['Efectividad'] > 65].iterrows()])
+                print(f"[DEBUG] Activando todos los tipsters de alta efectividad para el usuario {user_id}.")
                 cursor.execute("UPDATE users SET receive_all_alta_efectividad = 1 WHERE user_id = ?", (user_id,))
+                conn.commit()
+                print(f"[DEBUG] Estado de 'receive_all_alta_efectividad' actualizado a 1 para el usuario {user_id}.")
                 await callback_query.answer("Has activado todos los tipsters de Alta Efectividad.")
-
-            conn.commit()
 
         # Actualizar el menú después de activar o desactivar todos los tipsters
         await handle_main_button_selection(client, callback_query)
@@ -251,22 +257,41 @@ def register_handlers(app: Client):
 
         with sqlite3.connect("bot_database.db") as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM user_tipsters WHERE user_id = ? AND tipster_name = ?", 
-                        (user_id, tipster_name))
+            
+            # Verificar si el tipster ya está activado para el usuario
+            cursor.execute("SELECT * FROM user_tipsters WHERE user_id = ? AND tipster_name = ?", (user_id, tipster_name))
             subscription = cursor.fetchone()
-
+            
             if subscription:
-                cursor.execute("DELETE FROM user_tipsters WHERE user_id = ? AND tipster_name = ?", 
-                            (user_id, tipster_name))
+                # Si está activado, desactivarlo
+                cursor.execute("DELETE FROM user_tipsters WHERE user_id = ? AND tipster_name = ?", (user_id, tipster_name))
+                print(f"[DEBUG] Desactivando notificaciones para {tipster_name} del usuario {user_id}.")
+                conn.commit()
+                
+                # Verificar que se haya realizado el cambio
+                cursor.execute("SELECT * FROM user_tipsters WHERE user_id = ? AND tipster_name = ?", (user_id, tipster_name))
+                if cursor.fetchone() is None:
+                    print(f"[DEBUG] {tipster_name} desactivado correctamente para el usuario {user_id}.")
+                else:
+                    print(f"[ERROR] No se pudo desactivar {tipster_name} para el usuario {user_id}.")
                 await callback_query.answer(f"Has desactivado las notificaciones para {tipster_name}.")
             else:
-                cursor.execute("INSERT INTO user_tipsters (user_id, tipster_name) VALUES (?, ?)", 
-                            (user_id, tipster_name))
+                # Si no está activado, activarlo
+                cursor.execute("INSERT INTO user_tipsters (user_id, tipster_name) VALUES (?, ?)", (user_id, tipster_name))
+                print(f"[DEBUG] Activando notificaciones para {tipster_name} del usuario {user_id}.")
+                conn.commit()
+                
+                # Verificar que se haya realizado el cambio
+                cursor.execute("SELECT * FROM user_tipsters WHERE user_id = ? AND tipster_name = ?", (user_id, tipster_name))
+                if cursor.fetchone():
+                    print(f"[DEBUG] {tipster_name} activado correctamente para el usuario {user_id}.")
+                else:
+                    print(f"[ERROR] No se pudo activar {tipster_name} para el usuario {user_id}.")
                 await callback_query.answer(f"Has activado las notificaciones para {tipster_name}.")
-            conn.commit()
 
         # Actualizar el menú del grupo después del cambio
         await handle_main_button_selection(client, callback_query)
+
 
 
     @app.on_message(filters.command("categories") & filters.private)
@@ -338,9 +363,7 @@ def register_handlers(app: Client):
         efectividad = stats.get('Efectividad', None)
         racha = stats.get('Dias en racha', 0)
 
-
-                # Asignar el semáforo basado en la columna 'Efectividad'
-        efectividad = stats.get('Efectividad', 0)
+        # Asignar el semáforo basado en la columna 'Efectividad'
         if efectividad > 65:
             semaforo = '🟢'
         elif 50 <= efectividad <= 65:
@@ -374,7 +397,7 @@ def register_handlers(app: Client):
         # Procesar la imagen y agregar la marca de agua
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
-            watermarked_image = add_watermark(photo, "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png", racha_emoji, racha)
+            watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
 
         # Enviar a los usuarios que tienen activado este tipster
         with sqlite3.connect("bot_database.db") as conn:
@@ -401,7 +424,7 @@ def register_handlers(app: Client):
     @app.on_message((filters.media_group | filters.photo) & filters.create(lambda _, __, m: m.from_user is not None and is_admin(m.from_user.id)))
     async def handle_image_group(client, message):
         # Cargar el archivo Excel
-        excel_file = "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx"
+        excel_file = config.excel_path
         tipsters_df, _ = load_tipsters_from_excel(excel_file)
         channels_dict = load_channels_from_excel(excel_file)  # Asegúrate de que esta función cargue los canales correctamente
 
@@ -479,13 +502,13 @@ def register_handlers(app: Client):
                 if media.photo:
                     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                         photo = await client.download_media(media.photo.file_id, file_name=tmp_file.name)
-                        watermarked_image = add_watermark(photo, "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png", semaforo, racha)
+                        watermarked_image = add_watermark(photo, config.watermark_path, semaforo, racha)
                         processed_images.append(watermarked_image)
                     os.remove(tmp_file.name)
         else:
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
-                processed_images = [add_watermark(photo, "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png", semaforo, racha)]
+                processed_images = [add_watermark(photo, config.watermark_path, semaforo, racha)]
             os.remove(tmp_file.name)
 
         # Enviar a los usuarios que tienen activado este tipster
@@ -515,15 +538,15 @@ def register_handlers(app: Client):
 
 
 
-    @app.on_message(filters.channel & filters.chat(CANAL_PRIVADO_ID))
+    @app.on_message(filters.channel & filters.chat(config.CANAL_PRIVADO_ID))
     async def handle_channel_images(client, message):
         caption = message.caption
         if not caption:
             await message.reply("No se detectó nombre de tipster en la imagen.")
             return
 
-        tipsters_df, _ = load_tipsters_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
-        channels_dict = load_channels_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
+        tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
+        channels_dict = load_channels_from_excel(config.excel_path)
 
         await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
 
