@@ -382,17 +382,17 @@ def register_handlers(app: Client):
         # Crear el mensaje
         stats_message = f"Tipster: {tipster_name}{semaforo}\n Control de apuestas👇\n"
         if bank_inicial is not None:
-            stats_message += f"Bank Inicial 🏦: ${bank_inicial:.2f} 💵\n"
+            stats_message += f"Bank Inicial 🏦: ${int(bank_inicial):.2f} 💵\n"
         if bank_actual is not None:
-            stats_message += f"Bank Actual 🏦: ${bank_actual:.2f} 💵\n"
+            stats_message += f"Bank Actual 🏦: ${int(bank_actual):.2f} 💵\n"
         if victorias is not None:
-            stats_message += f"Victorias: {victorias} ✅\n"
+            stats_message += f"Victorias: {int(victorias)} ✅\n"
         if derrotas is not None:
-            stats_message += f"Derrotas: {derrotas} ❌\n"
+            stats_message += f"Derrotas: {int(derrotas)} ❌\n"
         if efectividad is not None:
-            stats_message += f"Efectividad: {efectividad}% 📊\n"
+            stats_message += f"Efectividad: {int(efectividad)}% 📊\n"
         if racha:
-            stats_message += f"Racha: {racha} días {racha_emoji}"
+            stats_message += f"Racha: {int(racha)} días {racha_emoji}"
 
         # Procesar la imagen y agregar la marca de agua
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:

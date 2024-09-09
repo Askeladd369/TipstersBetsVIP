@@ -42,7 +42,7 @@ def load_groups_from_excel(excel_file):
 
 # Función para verificar si el usuario es administrador
 def is_admin(user_id):
-    return user_id in {config.admin_id, config.admin_id2, config.bot_id}
+    return user_id in {config.admin_id, config.admin_id2}
 
 # Función para verificar si el usuario es el administrador principal
 def is_main_admin(user_id):
@@ -63,8 +63,8 @@ user_states = UserState()
 
 # Función para mostrar el menú principal
 async def show_main_button_menu(client, message):
-    df = load_tipsters_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
-    grupos = load_groups_from_excel("C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx")
+    df = load_tipsters_from_excel(config.excel_path)
+    grupos = load_groups_from_excel(config.excel_path)
 
     if "Grupo Alta Efectividad 📊" not in grupos:
         grupos.append("Grupo Alta Efectividad 📊")
@@ -82,7 +82,7 @@ async def show_main_button_menu(client, message):
 def get_tipsters_by_group(df, group_name):
     return df[df['Grupo'] == group_name]
 
-# Función para agregar marca de agua a la imagen
+
 # Función para agregar marca de agua a la imagen
 def add_watermark(input_image_path, watermark_image_path, semaphore, stars):
     from PIL import Image, ImageDraw

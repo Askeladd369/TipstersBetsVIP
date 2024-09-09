@@ -12,12 +12,11 @@ channel_alta_efectividad = -1002054332150  # Reemplaza con el ID del canal para 
 admin_id = 1142604997  # Tu ID de Telegram
 admin_id2 = 1209577470  # Lista de IDs de administradores secundarios
 
-excel_path ="C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx"
-watermark_path="C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png"
+excel_path = "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx"#"C:\\Users\\saidd\OneDrive\\Escritorio\\Bot de Telegram pruebas\\TipstersBet\\excel tipstersbets.xlsx"
+watermark_path=  "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png" #"C:\\Users\\saidd\OneDrive\\Escritorio\\Bot de Telegram pruebas\\TipstersBet\\watermark.png"
 
 
-CANAL_PRIVADO_ID = -1002431937420
+CANAL_PRIVADO_ID = -1002471002368#-1002431937420
 
-"C:\\Users\\saidd\OneDrive\\Escritorio\\Bot de Telegram pruebas\\TipstersBet\\excel tipstersbets.xlsx"
-"C:\\Users\\Administrator\\SendTipsters\\Bot Reventas\\excel.xlsx"
+
 
