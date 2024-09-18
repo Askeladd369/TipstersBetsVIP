@@ -4,6 +4,19 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import sqlite3
 import config
 import pyrogram
+import random, string
+
+
+# Función para generar código de invitación
+def generate_invitation_code():
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    print(f"[DEBUG] - Código generado: {code}")
+    return code
+
+#Funcion para dividir los botones de tipsters
+def split_message(text, max_chars=4096):
+    """Divide un mensaje en partes más pequeñas si excede el límite de caracteres permitido."""
+    return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
 
 def load_tipsters_from_excel(excel_file):
     try:
@@ -24,7 +37,6 @@ def load_channels_from_excel(excel_file):
         logging.error(f"Error al cargar la hoja de canales: {e}")
         return {}
 
-
 def load_groups_from_excel(excel_file):
     try:
         # Cargar el archivo Excel en un DataFrame de Pandas
@@ -37,8 +49,6 @@ def load_groups_from_excel(excel_file):
     except Exception as e:
         print(f"Error al cargar el archivo Excel: {e}")
         return []
-
-
 
 # Función para verificar si el usuario es administrador
 def is_admin(user_id):
@@ -81,7 +91,6 @@ async def show_main_button_menu(client, message):
 # Función para manejar la selección de botones principales
 def get_tipsters_by_group(df, group_name):
     return df[df['Grupo'] == group_name]
-
 
 # Función para agregar marca de agua a la imagen
 def add_watermark(input_image_path, watermark_image_path, semaphore, stars):
@@ -127,4 +136,3 @@ def is_user_approved(user_id):
     return user and user[2] == 1  # Acceder directamente al tercer elemento que representa la aprobación
 
 
-   
