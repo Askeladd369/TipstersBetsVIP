@@ -329,6 +329,8 @@ def register_handlers(app: Client):
         efectividad = stats.get('Efectividad', None)
         racha = stats.get('Dias en racha', 0)
 
+
+
         # Verificar si las estadísticas son NaN y manejar el caso
         if pd.isna(victorias):
             victorias = 0
@@ -340,7 +342,9 @@ def register_handlers(app: Client):
             bank_actual = 0.0
         if pd.isna(racha):
             racha = 0
-
+        else:
+            racha = int(racha)
+            
         # Asignar semáforo
         semaforo = '🟢' if efectividad > 65 else '🟡' if 50 <= efectividad <= 65 else '🔴'
 
