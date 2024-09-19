@@ -327,10 +327,17 @@ def register_handlers(app: Client):
         efectividad = stats.get('Efectividad', None)
         racha = stats.get('Dias en racha', 0)
         
-        if pd.isna(racha):  # Si racha es NaN, lo asignamos a 0
+        # Verificar si las estadísticas son NaN y manejar el caso
+        if pd.isna(victorias):  # Si victorias es NaN, asignar un valor predeterminado
+            victorias = 0
+        if pd.isna(derrotas):  # Si derrotas es NaN, asignar un valor predeterminado
+            derrotas = 0
+        if pd.isna(bank_inicial):
+            bank_inicial = 0.0
+        if pd.isna(bank_actual):
+            bank_actual = 0.0
+        if pd.isna(racha):
             racha = 0
-        else:
-            racha = int(racha)  # Convertir a entero si no es NaN
 
         # Asignar semáforo
         semaforo = '🟢' if efectividad > 65 else '🟡' if 50 <= efectividad <= 65 else '🔴'
@@ -345,9 +352,9 @@ def register_handlers(app: Client):
         if bank_actual:
             stats_message += f"Bank Actual 🏦: ${bank_actual:.2f} 💵\n"
         if victorias:
-            stats_message += f"Victorias: {victorias} ✅\n"
+            stats_message += f"Victorias: {int(victorias)} ✅\n"
         if derrotas:
-            stats_message += f"Derrotas: {derrotas} ❌\n"
+            stats_message += f"Derrotas: {int(derrotas)} ❌\n"
         if efectividad:
             stats_message += f"Efectividad: {efectividad}% 📊\n"
         if racha:
@@ -401,6 +408,7 @@ def register_handlers(app: Client):
         # Enviar al canal de alta efectividad si corresponde
         if efectividad > 65:
             await client.send_media_group(config.channel_alta_efectividad, media_group, caption=stats_message)
+
            
     # Handler para grupos de imágenes
     @app.on_message((filters.media_group | filters.photo) & admin_only())
@@ -454,10 +462,17 @@ def register_handlers(app: Client):
         derrotas = stats.get('Derrotas', None)
         racha = stats.get('Dias en racha', 0)
 
-        if pd.isna(racha):  # Si racha es NaN, lo asignamos a 0
+        # Verificar si las estadísticas son NaN y manejar el caso
+        if pd.isna(victorias):  # Si victorias es NaN, asignar un valor predeterminado
+            victorias = 0
+        if pd.isna(derrotas):  # Si derrotas es NaN, asignar un valor predeterminado
+            derrotas = 0
+        if pd.isna(bank_inicial):
+            bank_inicial = 0.0
+        if pd.isna(bank_actual):
+            bank_actual = 0.0
+        if pd.isna(racha):
             racha = 0
-        else:
-            racha = int(racha)  # Convertir a entero si no es NaN
 
         # Crear la cadena con emojis de la racha
         racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha else ''
@@ -465,7 +480,7 @@ def register_handlers(app: Client):
         # Crear el mensaje de estadísticas
         stats_message = f"Tipster: {category} {semaforo}\n"
         if bank_inicial:
-            stats_message += f"Bank Inicial 🏦: ${int(bank_inicial):.2f} 💵\n"
+            stats_message += f"Bank Inicial 🏦: ${bank_inicial:.2f} 💵\n"
         if bank_actual:
             stats_message += f"Bank Actual 🏦: ${bank_actual:.2f} 💵\n"
         if victorias:
@@ -473,7 +488,7 @@ def register_handlers(app: Client):
         if derrotas:
             stats_message += f"Derrotas: {int(derrotas)} ❌\n"
         if efectividad:
-            stats_message += f"Efectividad: {int(efectividad)}% 📊\n"
+            stats_message += f"Efectividad: {efectividad}% 📊\n"
         if racha:
             stats_message += f"Racha: {racha} días {racha_emoji}"
 
@@ -535,6 +550,7 @@ def register_handlers(app: Client):
         # Eliminar el registro del media group procesado si fue un grupo
         if message.media_group_id:
             del client.media_groups_processed[message.media_group_id]
+
 
     @app.on_message(filters.channel & filters.chat(config.CANAL_PRIVADO_ID))
     async def handle_channel_images(client, message):
