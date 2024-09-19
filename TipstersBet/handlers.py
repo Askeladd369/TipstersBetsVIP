@@ -312,6 +312,7 @@ def register_handlers(app: Client):
     async def process_image_and_send(client, message, tipster_name, tipsters_df, channels_dict):
         # Buscar las estadísticas del tipster en el DataFrame (Hoja 1)
         tipster_stats = tipsters_df[tipsters_df['Nombre'].str.lower() == tipster_name.lower()]
+        
 
         if tipster_stats.empty:
             await message.reply(f"No se encontraron estadísticas para el tipster '{tipster_name}'.")
@@ -559,9 +560,12 @@ def register_handlers(app: Client):
             await message.reply("No se detectó nombre de tipster en la imagen.")
             return
 
+        # Cargar las estadísticas de los tipsters y el diccionario de canales
         tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
+        channels_dict = load_channels_from_excel(config.excel_path)  # Cargar el diccionario de canales
 
-        await process_image_and_send(client, message, caption.strip(), tipsters_df)
+        # Llamar a la función y pasar todos los argumentos, incluido channels_dict
+        await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
 
     @app.on_callback_query(filters.regex(r"review_users") & admin_only())
     async def review_users(client, callback_query):
