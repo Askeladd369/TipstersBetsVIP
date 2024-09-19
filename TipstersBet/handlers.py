@@ -339,12 +339,13 @@ def register_handlers(app: Client):
             bank_actual = 0.0
         if pd.isna(racha):
             racha = 0
-
+        else:
+            racha = int(racha)  # Convertir racha a entero para evitar errores
         # Asignar semáforo
         semaforo = '🟢' if efectividad > 65 else '🟡' if 50 <= efectividad <= 65 else '🔴'
 
         # Procesar racha
-        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '')
+        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha else ''
 
         # Crear el mensaje
         stats_message = f"Tipster: {tipster_name} {semaforo}\n"
@@ -474,7 +475,8 @@ def register_handlers(app: Client):
             bank_actual = 0.0
         if pd.isna(racha):
             racha = 0
-
+        else:
+            racha = int(racha)  # Convertir racha a entero para evitar errores
         # Crear la cadena con emojis de la racha
         racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha else ''
         
