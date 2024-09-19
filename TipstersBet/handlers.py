@@ -425,6 +425,7 @@ def register_handlers(app: Client):
             await message.reply("Por favor, envía imágenes.")
             return
 
+        # Si es un grupo de medios
         if message.media_group_id:
             if not hasattr(client, 'media_groups_processed'):
                 client.media_groups_processed = {}
@@ -438,6 +439,7 @@ def register_handlers(app: Client):
             # Obtener el primer mensaje del grupo para usar su caption
             caption = media_group_msgs[0].caption if media_group_msgs[0].caption else None
         else:
+            # Si es una imagen individual
             caption = message.caption
 
         if not caption:
@@ -477,6 +479,7 @@ def register_handlers(app: Client):
             racha = 0
         else:
             racha = int(racha)  # Convertir racha a entero para evitar errores
+
         # Crear la cadena con emojis de la racha
         racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha else ''
         
@@ -495,7 +498,7 @@ def register_handlers(app: Client):
         if racha:
             stats_message += f"Racha: {racha} días {racha_emoji}"
 
-        # Procesar imágenes del grupo
+        # Procesar imágenes del grupo o imagen individual
         media_group = []
         if message.media_group_id:
             for media in media_group_msgs:  # Cambié a media_group_msgs
@@ -515,7 +518,7 @@ def register_handlers(app: Client):
             await message.reply("No se encontraron fotos en el mensaje.")
             return
 
-        # Asignar el caption a la primera foto en el grupo de medios
+        # Asignar el caption a la primera foto en el grupo de medios correctamente
         media_group[0].caption = stats_message
 
         # Enviar imágenes a los usuarios suscritos como un grupo de medios
