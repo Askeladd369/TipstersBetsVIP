@@ -1,7 +1,7 @@
 # config.py
 api_id = "22823293"
 api_hash = "c110fb4d3ba8473643b8e33e1c81be1d"
-bot_token = "7472327662:AAEo_XSXk8s_BrDfhvlc51HBR0epE767h7E"
+bot_token = "7020407274:AAE6sGek2yA-AbgJjsNmyvkTyCDoErAaxFM"
 channel_alta_efectividad = -1002194870823
 
 admin_id = 1142604997  # Tu ID de Telegram
