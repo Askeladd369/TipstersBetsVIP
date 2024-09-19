@@ -309,10 +309,10 @@ def register_handlers(app: Client):
             await message.reply("Tu cuenta aún no ha sido aprobada por el administrador. Por favor espera la confirmación.")
 
     # Función para procesar imágenes y enviar a usuarios/canales
+
     async def process_image_and_send(client, message, tipster_name, tipsters_df, channels_dict):
         # Buscar las estadísticas del tipster en el DataFrame (Hoja 1)
         tipster_stats = tipsters_df[tipsters_df['Nombre'].str.lower() == tipster_name.lower()]
-        
 
         if tipster_stats.empty:
             await message.reply(f"No se encontraron estadísticas para el tipster '{tipster_name}'.")
@@ -327,11 +327,11 @@ def register_handlers(app: Client):
         derrotas = stats.get('Derrotas', None)
         efectividad = stats.get('Efectividad', None)
         racha = stats.get('Dias en racha', 0)
-        
+
         # Verificar si las estadísticas son NaN y manejar el caso
-        if pd.isna(victorias):  # Si victorias es NaN, asignar un valor predeterminado
+        if pd.isna(victorias):
             victorias = 0
-        if pd.isna(derrotas):  # Si derrotas es NaN, asignar un valor predeterminado
+        if pd.isna(derrotas):
             derrotas = 0
         if pd.isna(bank_inicial):
             bank_inicial = 0.0
@@ -339,15 +339,14 @@ def register_handlers(app: Client):
             bank_actual = 0.0
         if pd.isna(racha):
             racha = 0
-        else:
-            racha = int(racha)  # Convertir racha a entero para evitar errores
+
         # Asignar semáforo
         semaforo = '🟢' if efectividad > 65 else '🟡' if 50 <= efectividad <= 65 else '🔴'
 
         # Procesar racha
-        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha else ''
+        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '')
 
-        # Crear el mensaje
+        # Crear el mensaje de estadísticas
         stats_message = f"Tipster: {tipster_name} {semaforo}\n"
         if bank_inicial:
             stats_message += f"Bank Inicial 🏦: ${bank_inicial:.2f} 💵\n"
@@ -366,16 +365,16 @@ def register_handlers(app: Client):
 
         # Procesar la imagen y agregar la marca de agua
         media_group = []
-        for media in message.media:
-            if media.photo:
-                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    photo = await client.download_media(media.photo.file_id, file_name=tmp_file.name)
-                    watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
-                    media_group.append(InputMediaPhoto(watermarked_image))
 
-                os.remove(tmp_file.name)
+        # Verificar si el mensaje tiene una foto
+        if message.photo:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
+                watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
+                media_group.append(InputMediaPhoto(watermarked_image))
 
-        if not media_group:
+            os.remove(tmp_file.name)
+        else:
             await message.reply("No se encontraron fotos en el mensaje.")
             return
 
@@ -386,7 +385,7 @@ def register_handlers(app: Client):
             users = cursor.fetchall()
 
             for user in users:
-                await client.send_media_group(user[0], media_group, caption=stats_message)
+                await client.send_media_group(user[0], media_group)
 
         # Obtener el nombre del grupo desde las estadísticas del tipster
         group_name = stats.get('Grupo', '').strip()
@@ -401,7 +400,7 @@ def register_handlers(app: Client):
 
         # Enviar imágenes al canal como un grupo de medios
         try:
-            await client.send_media_group(channel_id, media_group, caption=stats_message)
+            await client.send_media_group(channel_id, media_group)
             print(f"Imágenes enviadas correctamente al canal {channel_id}")
         except Exception as e:
             print(f"Error al enviar las imágenes al canal {channel_id}: {e}")
@@ -409,7 +408,7 @@ def register_handlers(app: Client):
 
         # Enviar al canal de alta efectividad si corresponde
         if efectividad > 65:
-            await client.send_media_group(config.channel_alta_efectividad, media_group, caption=stats_message)
+            await client.send_media_group(config.channel_alta_efectividad, media_group)
 
            
     # Handler para grupos de imágenes
