@@ -540,26 +540,40 @@ def register_handlers(app: Client):
 
             # Obtener todo el grupo de medios
             media_group = await client.get_media_group(message.chat.id, message.id)
-            # Tomar el caption de la primera imagen del grupo
-            caption = media_group[0].caption if media_group[0].caption else None
+
+            # Procesar cada imagen en el grupo de medios
+            for media in media_group:
+                caption = media.caption if media.caption else media_group[0].caption  # Toma el caption de la primera imagen si es necesario
+                if not caption:
+                    await message.reply("No se detectó nombre de tipster en las imágenes.")
+                    continue  # Continuar procesando otras imágenes
+
+                # Cargar las estadísticas de los tipsters y el diccionario de canales
+                tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
+                channels_dict = load_channels_from_excel(config.excel_path)
+
+                # Procesar cada imagen del grupo
+                await process_image_and_send(client, media, caption.strip(), tipsters_df, channels_dict)
+
         else:
+            # Procesar una sola imagen si no es un media group
             caption = message.caption
+            if not caption:
+                await message.reply("No se detectó nombre de tipster en la imagen.")
+                return
 
-        # Si no hay caption, enviar mensaje de error
-        if not caption:
-            await message.reply("No se detectó nombre de tipster en la imagen.")
-            return
+            # Cargar las estadísticas de los tipsters y el diccionario de canales
+            tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
+            channels_dict = load_channels_from_excel(config.excel_path)
 
-        # Cargar las estadísticas de los tipsters y el diccionario de canales
-        tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
-        channels_dict = load_channels_from_excel(config.excel_path)  # Cargar el diccionario de canales
-
-        # Llamar a la función y pasar todos los argumentos, incluido channels_dict
-        await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
+            # Procesar la imagen
+            await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
 
         # Limpiar el registro del media group para evitar duplicados
         if message.media_group_id:
             del client.media_groups_processed[message.media_group_id]
+
+
 
     @app.on_callback_query(filters.regex(r"review_users") & admin_only())
     async def review_users(client, callback_query):
