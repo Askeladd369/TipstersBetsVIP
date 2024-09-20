@@ -369,7 +369,7 @@ def register_handlers(app: Client):
         # Crear una lista para agrupar todas las imágenes procesadas
         media_group = []
         processed_images = []
-        
+
         if message.media_group_id:
             for media in media_group:
                 if media.photo:
@@ -387,7 +387,7 @@ def register_handlers(app: Client):
         # Enviar a los usuarios suscritos
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (category,))
+            cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (tipster_name,))
             users = cursor.fetchall()
 
             for user in users:
