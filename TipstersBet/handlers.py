@@ -327,8 +327,6 @@ def register_handlers(app: Client):
         efectividad = stats.get('Efectividad', None)
         racha = stats.get('Dias en racha', 0)
 
-
-
         # Verificar si las estadísticas son NaN y manejar el caso
         if pd.isna(victorias):
             victorias = 0
@@ -366,7 +364,7 @@ def register_handlers(app: Client):
 
         print("Stats message creado correctamente.")  # Depuración
 
-    # Crear una lista para agrupar todas las imágenes procesadas
+        # Crear una lista para agrupar todas las imágenes procesadas
         media_group = []
 
         # Verificar si el mensaje contiene una imagen (foto) o es un media group
@@ -378,9 +376,6 @@ def register_handlers(app: Client):
             if message.media_group_id in client.media_groups_processed:
                 print(f"El grupo de medios con ID {message.media_group_id} ya fue procesado.")
                 return  # Salir si ya fue procesado
-
-            # Marcar el grupo de medios como procesado
-            client.media_groups_processed.add(message.media_group_id)
 
             # Obtener todas las imágenes del media group
             media_group_content = await client.get_media_group(message.chat.id, message.id)
@@ -415,42 +410,43 @@ def register_handlers(app: Client):
             await message.reply("No se encontraron fotos en el mensaje.")
             return
 
-        # Enviar las imágenes a los usuarios suscritos como un grupo de medios
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (tipster_name,))
-            users = cursor.fetchall()
-
-            for user in users:
-                await client.send_media_group(user[0], media_group)
-
-        # Obtener el nombre del grupo desde las estadísticas del tipster
-        group_name = stats.get('Grupo', '').strip()
-
-        # Buscar el ID del canal correspondiente desde el diccionario de canales
-        channel_id = channels_dict.get(group_name)
-
-        if not channel_id:
-            print(f"No se encontró un canal correspondiente para el grupo: {group_name}")
-            await message.reply(f"No se encontró un canal correspondiente para el grupo: {group_name}")
-            return
-
-        # Enviar imágenes al canal como un grupo de medios
         try:
+            # Enviar las imágenes a los usuarios suscritos como un grupo de medios
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (tipster_name,))
+                users = cursor.fetchall()
+
+                for user in users:
+                    await client.send_media_group(user[0], media_group)
+
+            # Obtener el nombre del grupo desde las estadísticas del tipster
+            group_name = stats.get('Grupo', '').strip()
+
+            # Buscar el ID del canal correspondiente desde el diccionario de canales
+            channel_id = channels_dict.get(group_name)
+
+            if not channel_id:
+                print(f"No se encontró un canal correspondiente para el grupo: {group_name}")
+                await message.reply(f"No se encontró un canal correspondiente para el grupo: {group_name}")
+                return
+
+            # Enviar imágenes al canal como un grupo de medios
             await client.send_media_group(channel_id, media_group)
             print(f"Imágenes enviadas correctamente al canal {channel_id}")
+
+            # Enviar al canal de alta efectividad si corresponde
+            if efectividad > 65:
+                await client.send_media_group(config.channel_alta_efectividad, media_group)
+
+            # Marcar el grupo de medios como procesado solo después de que todo haya sido exitoso
+            if message.media_group_id:
+                client.media_groups_processed.add(message.media_group_id)
+
         except Exception as e:
-            print(f"Error al enviar las imágenes al canal {channel_id}: {e}")
-            await message.reply(f"Error al enviar las imágenes al canal {channel_id}: {e}")
+            print(f"Error al enviar las imágenes: {e}")
+            await message.reply(f"Error al enviar las imágenes: {e}")
 
-        # Enviar al canal de alta efectividad si corresponde
-        if efectividad > 65:
-            await client.send_media_group(config.channel_alta_efectividad, media_group)
-
-        # Limpiar el registro del grupo de medios después de procesar
-        if message.media_group_id:
-            client.media_groups_processed.discard(message.media_group_id)  # Liberar el ID para evitar que crezca indefinidamente
-                
     # Handler para grupos de imágenes
     @app.on_message((filters.media_group | filters.photo) & admin_only())
     async def handle_image_group(client, message):
