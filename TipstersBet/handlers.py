@@ -366,32 +366,49 @@ def register_handlers(app: Client):
 
         print("Stats message creado correctamente.")  # Depuración
 
-        # Procesar la imagen y agregar la marca de agua
+    # Crear una lista para agrupar todas las imágenes procesadas
         media_group = []
 
-        # Verificar si el mensaje contiene una imagen (foto)
-        if message.photo:
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
-                watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
+        # Verificar si el mensaje contiene una imagen (foto) o es un media group
+        if message.media_group_id:
+            # Obtener todas las imágenes del media group
+            media_group_content = await client.get_media_group(message.chat.id, message.id)
 
-                # Crear el InputMediaPhoto y agregar el caption al primer elemento
-                media_group.append(InputMediaPhoto(watermarked_image, caption=stats_message))
+            # Procesar cada imagen
+            for media in media_group_content:
+                if media.photo:
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                        photo = await client.download_media(media.photo.file_id, file_name=tmp_file.name)
+                        watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
+                        
+                        # Crear InputMediaPhoto para cada imagen
+                        media_group.append(InputMediaPhoto(watermarked_image))
 
-            os.remove(tmp_file.name)
+                    os.remove(tmp_file.name)
+        else:
+            # Procesar una sola imagen
+            if message.photo:
+                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                    photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
+                    watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
+
+                    # Crear el InputMediaPhoto para una sola imagen
+                    media_group.append(InputMediaPhoto(watermarked_image, caption=stats_message))
+
+                os.remove(tmp_file.name)
 
         if not media_group:
             await message.reply("No se encontraron fotos en el mensaje.")
             return
 
-        # Enviar imágenes a los usuarios suscritos como un grupo de medios
+        # Enviar las imágenes a los usuarios suscritos como un grupo de medios
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (tipster_name,))
             users = cursor.fetchall()
 
             for user in users:
-                await client.send_media_group(user[0], media_group)
+                await client.send_media_group(user[0], media_group, caption=stats_message)
 
         # Obtener el nombre del grupo desde las estadísticas del tipster
         group_name = stats.get('Grupo', '').strip()
@@ -406,7 +423,7 @@ def register_handlers(app: Client):
 
         # Enviar imágenes al canal como un grupo de medios
         try:
-            await client.send_media_group(channel_id, media_group)
+            await client.send_media_group(channel_id, media_group, caption=stats_message)
             print(f"Imágenes enviadas correctamente al canal {channel_id}")
         except Exception as e:
             print(f"Error al enviar las imágenes al canal {channel_id}: {e}")
@@ -414,7 +431,7 @@ def register_handlers(app: Client):
 
         # Enviar al canal de alta efectividad si corresponde
         if efectividad > 65:
-            await client.send_media_group(config.channel_alta_efectividad, media_group)
+            await client.send_media_group(config.channel_alta_efectividad, media_group, caption=stats_message)
 
     # Handler para grupos de imágenes
     @app.on_message((filters.media_group | filters.photo) & admin_only())
