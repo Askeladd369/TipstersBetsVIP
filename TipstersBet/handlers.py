@@ -535,9 +535,17 @@ def register_handlers(app: Client):
             tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
             channels_dict = load_channels_from_excel(config.excel_path)
 
+            # Lista para almacenar todas las imágenes procesadas
+            processed_media_group = []
+
             # Procesar todas las imágenes del grupo de medios
             for media in media_group:
-                await process_image_and_send(client, media, caption.strip(), tipsters_df, channels_dict)
+                # Aquí deberías procesar cada imagen (por ejemplo, añadir la marca de agua)
+                # Agrega la imagen procesada a la lista
+                processed_media_group.append(media)
+
+            # Llamar a la función una sola vez para todo el grupo de medios procesado
+            await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
 
         else:
             # Procesar una sola imagen si no es un grupo de medios
@@ -553,9 +561,10 @@ def register_handlers(app: Client):
             # Procesar la imagen
             await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
 
-        # Limpiar el registro del media group para evitar duplicados, asegurándonos de hacerlo al final del procesamiento
+        # Limpiar el registro del media group para evitar duplicados
         if message.media_group_id and message.media_group_id in client.media_groups_processed:
             del client.media_groups_processed[message.media_group_id]
+
 
 
 
