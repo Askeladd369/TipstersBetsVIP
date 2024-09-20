@@ -308,8 +308,6 @@ def register_handlers(app: Client):
         else:
             await message.reply("Tu cuenta aún no ha sido aprobada por el administrador. Por favor espera la confirmación.")
 
-
-
     # Función para procesar imágenes y enviar a usuarios/canales
     async def process_image_and_send(client, message, tipster_name, tipsters_df, channels_dict):
         # Buscar las estadísticas del tipster en el DataFrame (Hoja 1)
@@ -418,10 +416,136 @@ def register_handlers(app: Client):
         if efectividad > 65:
             await client.send_media_group(config.channel_alta_efectividad, media_group)
 
+    # Handler para grupos de imágenes
+    @app.on_message((filters.media_group | filters.photo) & admin_only())
+    async def handle_image_group(client, message):
+        excel_file = config.excel_path
+        tipsters_df, _ = load_tipsters_from_excel(excel_file)
+        channels_dict = load_channels_from_excel(excel_file)
+
+        if message.media_group_id:
+            # Manejar correctamente el grupo de medios
+            if not hasattr(client, 'media_groups_processed'):
+                client.media_groups_processed = {}
+
+            if message.media_group_id in client.media_groups_processed:
+                return
+
+            client.media_groups_processed[message.media_group_id] = True
+
+            # Obtener todo el grupo de medios
+            media_group = await client.get_media_group(message.chat.id, message.id)
+            # Tomar el caption de la primera imagen del grupo
+            caption = media_group[0].caption if media_group[0].caption else None
+        else:
+            caption = message.caption
+
+        # Si no hay caption, enviar mensaje de error
+        if not caption:
+            await message.reply("Por favor, añade el nombre del tipster a la(s) imagen(es).")
+            return
+
+        # Tomar el nombre del tipster desde el caption
+        category = caption.strip()
+
+        # Buscar estadísticas del tipster
+        tipster_stats = tipsters_df[tipsters_df['Nombre'].str.lower() == category.lower()]
+
+        if tipster_stats.empty:
+            await message.reply(f"No se encontraron estadísticas para el tipster '{category}'.")
+            return
+
+        stats = tipster_stats.iloc[0]  # Obtén las estadísticas
+
+        # Crear el mensaje de estadísticas
+        efectividad = stats.get('Efectividad', 0)
+        semaforo = '🟢' if efectividad > 65 else '🟡' if 50 <= efectividad <= 65 else '🔴'
+        bank_inicial = stats.get('Bank Inicial', None)
+        bank_actual = stats.get('Bank Actual', None)
+        victorias = stats.get('Victorias', None)
+        derrotas = stats.get('Derrotas', None)
+        racha = stats.get('Dias en racha', 0)
+        if pd.isna(racha):
+            racha = 0
+        else:
+            racha = int(racha)
+
+        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha else ''
+        stats_message = f"Tipster: {category} {semaforo}\n"
+        if bank_inicial:
+            stats_message += f"Bank Inicial 🏦: ${bank_inicial:.2f} 💵\n"
+        if bank_actual:
+            stats_message += f"Bank Actual 🏦: ${bank_actual:.2f} 💵\n"
+        if victorias:
+            stats_message += f"Victorias: {victorias} ✅\n"
+        if derrotas:
+            stats_message += f"Derrotas: {derrotas} ❌\n"
+        if efectividad:
+            stats_message += f"Efectividad: {efectividad}% 📊\n"
+        if racha:
+            stats_message += f"Racha: {racha} días {racha_emoji}"
+
+        processed_images = []
+        if message.media_group_id:
+            for media in media_group:
+                if media.photo:
+                    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                        photo = await client.download_media(media.photo.file_id, file_name=tmp_file.name)
+                        watermarked_image = add_watermark(photo, config.watermark_path, semaforo, racha)
+                        processed_images.append(watermarked_image)
+                    os.remove(tmp_file.name)
+        else:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
+                processed_images = [add_watermark(photo, config.watermark_path, semaforo, racha)]
+            os.remove(tmp_file.name)
+
+        # Enviar a los usuarios suscritos
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (category,))
+            users = cursor.fetchall()
+
+            for user in users:
+                for img in processed_images:
+                    await client.send_photo(user[0], img, caption=stats_message)
+
+        # Enviar al canal correspondiente del grupo
+        group_name = stats.get('Grupo', '').lower()
+        channel_id = channels_dict.get(group_name)
+        if channel_id:
+            for img in processed_images:
+                await client.send_photo(channel_id, img, caption=stats_message)
+
+        # Enviar al canal de alta efectividad si corresponde
+        if efectividad > 65 and 'alta efectividad' in channels_dict:
+            for img in processed_images:
+                await client.send_photo(channels_dict['alta efectividad'], img, caption=stats_message)
+
+        # Limpiar el registro de media group
+        if message.media_group_id:
+            del client.media_groups_processed[message.media_group_id]
 
     @app.on_message(filters.channel & filters.chat(config.CANAL_PRIVADO_ID))
     async def handle_channel_images(client, message):
-        caption = message.caption
+        if message.media_group_id:
+            # Manejar correctamente el grupo de medios
+            if not hasattr(client, 'media_groups_processed'):
+                client.media_groups_processed = {}
+
+            if message.media_group_id in client.media_groups_processed:
+                return
+
+            client.media_groups_processed[message.media_group_id] = True
+
+            # Obtener todo el grupo de medios
+            media_group = await client.get_media_group(message.chat.id, message.id)
+            # Tomar el caption de la primera imagen del grupo
+            caption = media_group[0].caption if media_group[0].caption else None
+        else:
+            caption = message.caption
+
+        # Si no hay caption, enviar mensaje de error
         if not caption:
             await message.reply("No se detectó nombre de tipster en la imagen.")
             return
@@ -432,6 +556,10 @@ def register_handlers(app: Client):
 
         # Llamar a la función y pasar todos los argumentos, incluido channels_dict
         await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
+
+        # Limpiar el registro del media group para evitar duplicados
+        if message.media_group_id:
+            del client.media_groups_processed[message.media_group_id]
 
     @app.on_callback_query(filters.regex(r"review_users") & admin_only())
     async def review_users(client, callback_query):
