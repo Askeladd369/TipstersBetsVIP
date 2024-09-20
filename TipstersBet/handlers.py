@@ -366,7 +366,7 @@ def register_handlers(app: Client):
 
         print("Stats message creado correctamente.")  # Depuración
 
-    # Crear una lista para agrupar todas las imágenes procesadas
+        # Crear una lista para agrupar todas las imágenes procesadas
         media_group = []
 
         # Verificar si el mensaje contiene una imagen (foto) o es un media group
@@ -375,14 +375,17 @@ def register_handlers(app: Client):
             media_group_content = await client.get_media_group(message.chat.id, message.id)
 
             # Procesar cada imagen
-            for media in media_group_content:
+            for idx, media in enumerate(media_group_content):
                 if media.photo:
                     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                         photo = await client.download_media(media.photo.file_id, file_name=tmp_file.name)
                         watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
-                        
-                        # Crear InputMediaPhoto para cada imagen
-                        media_group.append(InputMediaPhoto(watermarked_image))
+
+                        # Si es la primera imagen, agregar el caption
+                        if idx == 0:
+                            media_group.append(InputMediaPhoto(watermarked_image, caption=stats_message))
+                        else:
+                            media_group.append(InputMediaPhoto(watermarked_image))
 
                     os.remove(tmp_file.name)
         else:
@@ -392,7 +395,7 @@ def register_handlers(app: Client):
                     photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
                     watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
 
-                    # Crear el InputMediaPhoto para una sola imagen
+                    # Crear el InputMediaPhoto para una sola imagen con el caption
                     media_group.append(InputMediaPhoto(watermarked_image, caption=stats_message))
 
                 os.remove(tmp_file.name)
@@ -408,7 +411,7 @@ def register_handlers(app: Client):
             users = cursor.fetchall()
 
             for user in users:
-                await client.send_media_group(user[0], media_group, caption=stats_message)
+                await client.send_media_group(user[0], media_group)
 
         # Obtener el nombre del grupo desde las estadísticas del tipster
         group_name = stats.get('Grupo', '').strip()
@@ -423,7 +426,7 @@ def register_handlers(app: Client):
 
         # Enviar imágenes al canal como un grupo de medios
         try:
-            await client.send_media_group(channel_id, media_group, caption=stats_message)
+            await client.send_media_group(channel_id, media_group)
             print(f"Imágenes enviadas correctamente al canal {channel_id}")
         except Exception as e:
             print(f"Error al enviar las imágenes al canal {channel_id}: {e}")
@@ -431,8 +434,8 @@ def register_handlers(app: Client):
 
         # Enviar al canal de alta efectividad si corresponde
         if efectividad > 65:
-            await client.send_media_group(config.channel_alta_efectividad, media_group, caption=stats_message)
-
+            await client.send_media_group(config.channel_alta_efectividad, media_group)
+            
     # Handler para grupos de imágenes
     @app.on_message((filters.media_group | filters.photo) & admin_only())
     async def handle_image_group(client, message):
