@@ -366,11 +366,22 @@ def register_handlers(app: Client):
 
         print("Stats message creado correctamente.")  # Depuración
 
-        # Crear una lista para agrupar todas las imágenes procesadas
+    # Crear una lista para agrupar todas las imágenes procesadas
         media_group = []
 
         # Verificar si el mensaje contiene una imagen (foto) o es un media group
         if message.media_group_id:
+            # Asegurarse de que no se procese más de una vez el mismo grupo de medios
+            if not hasattr(client, 'media_groups_processed'):
+                client.media_groups_processed = set()
+
+            if message.media_group_id in client.media_groups_processed:
+                print(f"El grupo de medios con ID {message.media_group_id} ya fue procesado.")
+                return  # Salir si ya fue procesado
+
+            # Marcar el grupo de medios como procesado
+            client.media_groups_processed.add(message.media_group_id)
+
             # Obtener todas las imágenes del media group
             media_group_content = await client.get_media_group(message.chat.id, message.id)
 
@@ -435,7 +446,11 @@ def register_handlers(app: Client):
         # Enviar al canal de alta efectividad si corresponde
         if efectividad > 65:
             await client.send_media_group(config.channel_alta_efectividad, media_group)
-            
+
+        # Limpiar el registro del grupo de medios después de procesar
+        if message.media_group_id:
+            client.media_groups_processed.discard(message.media_group_id)  # Liberar el ID para evitar que crezca indefinidamente
+                
     # Handler para grupos de imágenes
     @app.on_message((filters.media_group | filters.photo) & admin_only())
     async def handle_image_group(client, message):
