@@ -343,7 +343,7 @@ def register_handlers(app: Client):
         # Crear el mensaje de estadísticas
         stats_message = f"Tipster: {tipster_name} {semaforo}\n"
         stats_message += f"🏦Bank Inicial: ${bank_inicial:.2f}💵\n🏦Bank Actual: ${bank_actual:.2f}💵\n"
-        stats_message += f"✅Victorias: {victorias}\n ❌Derrotas: {derrotas}\n 📊Efectividad: {efectividad}%\n Racha: {racha} días {racha_emoji}"
+        stats_message += f"✅Victorias: {victorias}\n❌Derrotas: {derrotas}\n📊Efectividad: {efectividad}%\nRacha: {racha} días {racha_emoji}"
 
         # Crear una lista para agrupar todas las imágenes procesadas
         media_group = []
@@ -462,7 +462,7 @@ def register_handlers(app: Client):
         racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha else ''
         stats_message = f"Tipster: {category} {semaforo}\n 🏦Bank Inicial: ${bank_inicial:.2f}💵\n"
         stats_message += f"🏦Bank Actual: ${bank_actual:.2f}💵\n ✅Victorias: {victorias}\n"
-        stats_message += f"❌Derrotas: {derrotas}\n 📊Efectividad: {efectividad}%\n Racha: {racha} días {racha_emoji}"
+        stats_message += f"❌Derrotas: {derrotas}\n📊Efectividad: {efectividad}%\nRacha: {racha} días {racha_emoji}"
 
         # Lista para agrupar todas las imágenes procesadas
         media_group = []
