@@ -637,13 +637,14 @@ def register_handlers(app: Client):
     async def remove_user_callback(client, callback_query):
         user_id = int(callback_query.data.split("_")[1])
         
-        # Cargar los canales desde el archivo Excel utilizando tu función actual
+        # Cargar los canales desde el archivo Excel
         channels_dict = load_channels_from_excel(config.excel_path)  # Ruta correcta al archivo Excel
         
         # Eliminar al usuario de los canales especificados en el Excel
         for group_name, channel_id in channels_dict.items():
             try:
-                await client.kick_chat_member(channel_id, user_id)
+                # Usar ban_chat_member para eliminar al usuario del canal
+                await client.ban_chat_member(channel_id, user_id)
                 logging.info(f"Usuario {user_id} removido del canal {channel_id} ({group_name})")
             except Exception as e:
                 logging.error(f"Error al eliminar al usuario {user_id} del canal {channel_id}: {e}")
@@ -655,6 +656,7 @@ def register_handlers(app: Client):
             conn.commit()
 
         await callback_query.answer(f"Usuario {user_id} eliminado del bot y de los canales.")
+
 
 # Función para eliminar usuarios de los canales cuando expira su suscripción
 async def check_and_remove_expired_users(client: Client):
