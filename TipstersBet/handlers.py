@@ -72,32 +72,32 @@ def register_handlers(app: Client):
         args = message.text.split()
         gif_path = "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\familia.gif"
         info_text = (
-        "📊 ¿Cómo funciona el grupo VIP?\n\n"
+        "📊 **¿Cómo funciona el grupo VIP?**\n\n"
         "Con el objetivo de ayudarte a identificar a los tipsters más rentables, contamos con un sistema de *semáforos* que acompañan al nombre de cada tipster:\n"
         "- Semáforo verde 🟢: Efectividad superior al **70%**.\n"
-        "- Semáforo amarillo 🟡: Efectividad entre *60% y 70%*.\n"
-        "- Semáforo rojo 🔴: Efectividad menor al *40%*.\n\n"
+        "- Semáforo amarillo 🟡: Efectividad entre **60% y 70%**.\n"
+        "- Semáforo rojo 🔴: Efectividad menor al **50%**.\n\n"
         "La efectividad es un indicador clave de la precisión y habilidad de los tipsters en sus pronósticos.\n\n"
         
-        "Además, también evaluamos el *rendimiento a corto plazo* con nuestro sistema de *estrellas* ⭐️:\n"
+        "Además, también evaluamos el *rendimiento a corto plazo* con nuestro sistema de **estrellas** ⭐️:\n"
         "- Cada estrella indica los días consecutivos de ganancias de un tipster. Si el tipster mantiene una racha positiva, subirá en el ranking con más estrellas ⭐️⭐️, indicando que es confiable seguir sus recomendaciones.\n"
         "- Por otro lado, si los resultados son negativos, el tipster descenderá en el ranking, lo que nos permite aprovechar las rachas positivas y evitar las negativas.\n\n"
         
         "💎 *Grupo Exclusivo 'Alta Efectividad'*\n"
-        "Este grupo está reservado para los tipsters con un historial de aciertos superior al *70%*. Aquí solo compartimos las apuestas de los tipsters más precisos.\n\n"
+        "Este grupo está reservado para los tipsters con un historial de aciertos superior al **70%**. Aquí solo compartimos las apuestas de los tipsters más precisos.\n\n"
         
         "🔥 De esta manera, garantizamos que sigas las recomendaciones de los expertos que contribuirán significativamente al crecimiento de tu bank.\n\n"
         
-        "*Modalidades para recibir nuestras apuestas:*\n"
+        "**Modalidades para recibir nuestras apuestas:**\n"
         "- A través de este bot, usando el comando /categories para activar a los tipsters que quieres recibir.\n"
         "- Uniéndote a nuestros grupos, donde organizamos a los tipsters por categorías.\n\n"
         
-        "🔗 *Enlaces de acceso a nuestros grupos:*\n"
-        "🇲🇽 *Grupo de Mexicanos*: [Unirse](https://t.me/+U4jnQ0zCppU4ZDIx)\n"
-        "🇺🇸 *Grupo de Extranjeros*: [Unirse](https://t.me/+xgtawqeOAhE2NDgx)\n"
-        "⭐️ *Grupo de Stakes 10*: [Unirse](https://t.me/+WOF58ybazGAwODUx)\n"
-        "💎 *Grupo de Alta Efectividad*: [Unirse](https://t.me/+vHF5R3P9eMQ2MTQx)\n"
-        "👑 *Los Rey App*: [Unirse](https://t.me/+o4REb6_EYiY1YWUx)\n\n"
+        "🔗 **Enlaces de acceso a nuestros grupos:**\n"
+        "🇲🇽 **Grupo de Mexicanos**: [Unirse](https://t.me/+U4jnQ0zCppU4ZDIx)\n"
+        "🇺🇸 **Grupo de Extranjeros**: [Unirse](https://t.me/+xgtawqeOAhE2NDgx)\n"
+        "⭐️ **Grupo de Stakes 10**: [Unirse](https://t.me/+WOF58ybazGAwODUx)\n"
+        "💎 **Grupo de Alta Efectividad**: [Unirse](https://t.me/+vHF5R3P9eMQ2MTQx)\n"
+        "👑 **Los Rey App**: [Unirse](https://t.me/+o4REb6_EYiY1YWUx)\n\n"
         
         "_Nota_: Si recibes el mensaje de “límite excedido” de Telegram, simplemente espera un momento y vuelve a solicitar el acceso haciendo clic en el enlace. Serás aceptado por un administrador en breves. 👨‍💻"
     )
