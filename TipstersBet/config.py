@@ -5,7 +5,8 @@ bot_token = "7020407274:AAE6sGek2yA-AbgJjsNmyvkTyCDoErAaxFM"
 channel_alta_efectividad = -1002054332150
 
 admin_id = 1142604997  # Tu ID de Telegram
-admin_id2 = 1209577470  # Lista de IDs de administradores secundarios
+admin_id2 = 1209577470 
+admin_id3 = 1762748618
 
 excel_path = "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\excel tipstersbets.xlsx" #"C:\\Users\\saidd\OneDrive\\Escritorio\\Bot de Telegram pruebas\\TipstersBet\\excel tipstersbets.xlsx"
 watermark_path= "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\watermark.png" #"C:\\Users\\saidd\OneDrive\\Escritorio\\Bot de Telegram pruebas\\TipstersBet\\watermark.png"

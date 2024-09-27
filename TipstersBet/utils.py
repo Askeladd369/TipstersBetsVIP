@@ -52,7 +52,7 @@ def load_groups_from_excel(excel_file):
 
 # Función para verificar si el usuario es administrador
 def is_admin(user_id):
-    return user_id in {config.admin_id, config.admin_id2}
+    return user_id in {config.admin_id, config.admin_id2, config.admin_id3}
 
 # Función para verificar si el usuario es el administrador principal
 def is_main_admin(user_id):

@@ -633,4 +633,47 @@ def register_handlers(app: Client):
 
         user_states.set(message.from_user.id, None)
 
+# Función para eliminar usuarios de los canales cuando expira su suscripción
+async def check_and_remove_expired_users(client: Client):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, first_name, subscription_days, approved_time FROM users WHERE approved = 1")
+        users = cursor.fetchall()
 
+    # Recorremos cada usuario y verificamos si su suscripción ha caducado
+    for user in users:
+        user_id = user[0]
+        approved_time = datetime.datetime.fromisoformat(user[3])
+        subscription_days = user[2]
+
+        # Calcular la fecha de vencimiento
+        expiration_date = approved_time + datetime.timedelta(days=subscription_days)
+        days_left = (expiration_date - datetime.datetime.now()).days
+
+        if days_left <= 0:
+            # Si la membresía ha expirado, eliminar al usuario de los canales
+            await remove_user_from_channels(client, user_id)
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("UPDATE users SET approved = 0 WHERE user_id = ?", (user_id,))
+                conn.commit()
+
+# Función para eliminar al usuario de los canales
+async def remove_user_from_channels(client: Client, user_id: int):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT channel_id FROM user_channels WHERE user_id = ?", (user_id,))
+        channels = cursor.fetchall()
+
+    for channel in channels:
+        try:
+            await client.kick_chat_member(channel[0], user_id)
+            logging.info(f"Usuario {user_id} removido del canal {channel[0]}")
+        except Exception as e:
+            logging.error(f"Error al eliminar al usuario {user_id} del canal {channel[0]}: {e}")
+
+# Tarea para ejecutar la verificación de membresías expiradas periódicamente
+async def membership_check_loop(client: Client):
+    while True:
+        await check_and_remove_expired_users(client)
+        await asyncio.sleep(86400)  # Esperar 24 horas entre verificaciones
