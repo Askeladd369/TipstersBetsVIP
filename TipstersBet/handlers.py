@@ -234,35 +234,7 @@ def register_handlers(app: Client):
         # Actualizar los botones inmediatamente para reflejar el cambio en la interfaz
         await update_tipster_buttons(client, callback_query)
 
-    @app.on_callback_query(filters.regex(r"toggle_all_alta_efectividad"))
-    async def toggle_all_alta_efectividad(client, callback_query):
-        user_id = callback_query.from_user.id
-        tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
 
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT receive_all_alta_efectividad FROM users WHERE user_id = ?", (user_id,))
-            receive_all = cursor.fetchone()[0]
-            
-            if receive_all:
-                # Desactivar todos los tipsters de Alta Efectividad
-                cursor.execute("""
-                    DELETE FROM user_tipsters WHERE user_id = ? AND tipster_name IN (
-                        SELECT Nombre FROM tipsters WHERE Efectividad > 65
-                    )""", (user_id,))
-                cursor.execute("UPDATE users SET receive_all_alta_efectividad = 0 WHERE user_id = ?", (user_id,))
-                await callback_query.answer("Has desactivado todos los tipsters de Alta Efectividad.")
-            else:
-                # Activar todos los tipsters de Alta Efectividad
-                cursor.executemany("""
-                    INSERT INTO user_tipsters (user_id, tipster_name) VALUES (?, ?) ON CONFLICT DO NOTHING
-                """, [(user_id, tipster['Nombre']) for _, tipster in tipsters_df[tipsters_df['Efectividad'] > 65].iterrows()])
-                cursor.execute("UPDATE users SET receive_all_alta_efectividad = 1 WHERE user_id = ?", (user_id,))
-                await callback_query.answer("Has activado todos los tipsters de Alta Efectividad.")
-            conn.commit()
-
-        # Actualizar los botones inmediatamente para reflejar el cambio en la interfaz
-        await update_tipster_buttons(client, callback_query)
 
     async def update_tipster_buttons(client, callback_query):
         # Recargar los grupos y los tipsters del Excel
@@ -309,6 +281,36 @@ def register_handlers(app: Client):
         # Actualizar los botones en el mensaje sin recargar la interfaz completa
         await callback_query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
         await callback_query.answer("Botones actualizados.")
+
+
+    @app.on_callback_query(filters.regex(r"toggle_(.+)_(Button\d+)_select"))
+    async def toggle_tipster_notification(client, callback_query):
+        user_id = callback_query.from_user.id
+        data = callback_query.data.split("_")
+        tipster_name = data[1]  # Nombre del tipster
+        group_button = data[2]  # Identificador del grupo
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar si el tipster ya está activado para el usuario
+            cursor.execute("SELECT * FROM user_tipsters WHERE user_id = ? AND tipster_name = ?", (user_id, tipster_name))
+            subscription = cursor.fetchone()
+            
+            if subscription:
+                # Si está activado, desactivarlo
+                cursor.execute("DELETE FROM user_tipsters WHERE user_id = ? AND tipster_name = ?", (user_id, tipster_name))
+                conn.commit()
+                await callback_query.answer(f"Has desactivado las notificaciones para {tipster_name}.")
+            else:
+                # Si no está activado, activarlo
+                cursor.execute("INSERT INTO user_tipsters (user_id, tipster_name) VALUES (?, ?)", (user_id, tipster_name))
+                conn.commit()
+                await callback_query.answer(f"Has activado las notificaciones para {tipster_name}.")
+
+        # Sincronización instantánea: Actualizar botones con el nuevo estado
+        await update_tipster_buttons(client, callback_query)
+
 
     @app.on_message(filters.command("categories") & filters.private)
     async def show_main_buttons(client, message):
