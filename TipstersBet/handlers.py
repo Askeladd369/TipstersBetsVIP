@@ -566,25 +566,24 @@ def register_handlers(app: Client):
             del client.media_groups_processed[message.media_group_id]
 
 
-
-
     @app.on_callback_query(filters.regex(r"review_users") & admin_only())
     async def review_users(client, callback_query):
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users")
+            cursor.execute("SELECT user_id, first_name, subscription_days, approved_time FROM users")
             users = cursor.fetchall()
 
         if not users:
             await callback_query.message.reply("No hay usuarios suscritos.")
             return
 
+        # Crear una lista de botones para cada usuario
         buttons = []
         for user in users:
             user_id = user[0]
             first_name = user[1]
-            subscription_days = user[3]
-            approved_time = user[4]
+            subscription_days = user[2]
+            approved_time = user[3]
 
             if approved_time:
                 approved_time = datetime.datetime.fromisoformat(approved_time)
@@ -595,10 +594,11 @@ def register_handlers(app: Client):
             buttons.append([InlineKeyboardButton(f"{first_name} - {days_left} días restantes", callback_data=f"remove_{user_id}")])
 
         buttons.append([InlineKeyboardButton("🔙 Volver", callback_data="admin_menu")])
-        
-        # Editar el texto del mensaje actual con los nuevos botones de usuarios
+
+        # Enviar el mensaje con los botones de los usuarios
         await callback_query.message.edit_text("Usuarios suscritos:", reply_markup=InlineKeyboardMarkup(buttons))
         await callback_query.answer()
+
 
     @app.on_callback_query(filters.regex(r"upload_excel") & admin_only())
     async def prompt_upload_excel(client, callback_query):
@@ -632,6 +632,29 @@ def register_handlers(app: Client):
             await message.reply("Por favor, sube un archivo válido en formato .xlsx.")
 
         user_states.set(message.from_user.id, None)
+
+    @app.on_callback_query(filters.regex(r"remove_(\d+)") & admin_only())
+    async def remove_user_callback(client, callback_query):
+        user_id = int(callback_query.data.split("_")[1])
+        
+        # Cargar los canales desde el archivo Excel utilizando tu función actual
+        channels_dict = load_channels_from_excel(config.excel_path)  # Ruta correcta al archivo Excel
+        
+        # Eliminar al usuario de los canales especificados en el Excel
+        for group_name, channel_id in channels_dict.items():
+            try:
+                await client.kick_chat_member(channel_id, user_id)
+                logging.info(f"Usuario {user_id} removido del canal {channel_id} ({group_name})")
+            except Exception as e:
+                logging.error(f"Error al eliminar al usuario {user_id} del canal {channel_id}: {e}")
+
+        # Ahora eliminamos al usuario del bot (de la base de datos)
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
+            conn.commit()
+
+        await callback_query.answer(f"Usuario {user_id} eliminado del bot y de los canales.")
 
 # Función para eliminar usuarios de los canales cuando expira su suscripción
 async def check_and_remove_expired_users(client: Client):
@@ -677,3 +700,5 @@ async def membership_check_loop(client: Client):
     while True:
         await check_and_remove_expired_users(client)
         await asyncio.sleep(86400)  # Esperar 24 horas entre verificaciones
+
+
