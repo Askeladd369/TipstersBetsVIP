@@ -215,15 +215,23 @@ def register_handlers(app: Client):
             receive_all = cursor.fetchone()[0]
             
             if receive_all:
-                cursor.execute("DELETE FROM user_tipsters WHERE user_id = ? AND tipster_name IN (SELECT Nombre FROM tipsters WHERE Efectividad > 65)", (user_id,))
+                # Desactivar todos los tipsters de Alta Efectividad
+                cursor.execute("""
+                    DELETE FROM user_tipsters WHERE user_id = ? AND tipster_name IN (
+                        SELECT Nombre FROM tipsters WHERE Efectividad > 65
+                    )""", (user_id,))
                 cursor.execute("UPDATE users SET receive_all_alta_efectividad = 0 WHERE user_id = ?", (user_id,))
                 await callback_query.answer("Has desactivado todos los tipsters de Alta Efectividad.")
             else:
-                cursor.executemany("INSERT INTO user_tipsters (user_id, tipster_name) VALUES (?, ?) ON CONFLICT DO NOTHING", [(user_id, tipster['Nombre']) for _, tipster in tipsters_df[tipsters_df['Efectividad'] > 65].iterrows()])
+                # Activar todos los tipsters de Alta Efectividad
+                cursor.executemany("""
+                    INSERT INTO user_tipsters (user_id, tipster_name) VALUES (?, ?) ON CONFLICT DO NOTHING
+                """, [(user_id, tipster['Nombre']) for _, tipster in tipsters_df[tipsters_df['Efectividad'] > 65].iterrows()])
                 cursor.execute("UPDATE users SET receive_all_alta_efectividad = 1 WHERE user_id = ?", (user_id,))
                 await callback_query.answer("Has activado todos los tipsters de Alta Efectividad.")
             conn.commit()
 
+        # Actualizar los botones inmediatamente para reflejar el cambio en la interfaz
         await update_tipster_buttons(client, callback_query)
 
     @app.on_callback_query(filters.regex(r"toggle_(.+)_(Button\d+)_select"))
@@ -296,7 +304,7 @@ def register_handlers(app: Client):
         # Añadir el botón de "Volver"
         buttons.append([InlineKeyboardButton("🔙 Volver", callback_data="user_main_menu")])
 
-        # Actualizar los botones en el mensaje
+        # Actualizar los botones en el mensaje sin recargar la interfaz completa
         await callback_query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
         await callback_query.answer("Botones actualizados.")
 
