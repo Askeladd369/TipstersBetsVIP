@@ -261,7 +261,7 @@ def register_handlers(app: Client):
                 await callback_query.answer("Has activado todos los tipsters de Alta Efectividad.")
             conn.commit()
 
-        # Actualizar los botones inmediatamente y el mensaje
+        # Actualizar los botones inmediatamente para reflejar el cambio en la interfaz
         await update_tipster_buttons(client, callback_query)
 
     async def update_tipster_buttons(client, callback_query):
@@ -306,9 +306,10 @@ def register_handlers(app: Client):
         # Añadir el botón de "Volver"
         buttons.append([InlineKeyboardButton("🔙 Volver", callback_data="user_main_menu")])
 
-        # Actualizar los botones en el mensaje completamente, incluyendo el markup
-        await callback_query.message.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
+        # Actualizar los botones en el mensaje sin recargar la interfaz completa
+        await callback_query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
         await callback_query.answer("Botones actualizados.")
+
 
 
     @app.on_message(filters.command("categories") & filters.private)
