@@ -72,9 +72,9 @@ def register_handlers(app: Client):
         args = message.text.split()
         gif_path = "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\familia.gif"
         info_text = (
-        "📊 *¿Cómo funciona el grupo VIP?*\n\n"
+        "📊 ¿Cómo funciona el grupo VIP?\n\n"
         "Con el objetivo de ayudarte a identificar a los tipsters más rentables, contamos con un sistema de *semáforos* que acompañan al nombre de cada tipster:\n"
-        "- Semáforo verde 🟢: Efectividad superior al *70%*.\n"
+        "- Semáforo verde 🟢: Efectividad superior al **70%**.\n"
         "- Semáforo amarillo 🟡: Efectividad entre *60% y 70%*.\n"
         "- Semáforo rojo 🔴: Efectividad menor al *40%*.\n\n"
         "La efectividad es un indicador clave de la precisión y habilidad de los tipsters en sus pronósticos.\n\n"
@@ -134,7 +134,7 @@ def register_handlers(app: Client):
             await client.send_animation(
                 chat_id=message.chat.id,
                 animation=gif_path,
-                caption=f"Bienvenido a la familia{user_name}! 🎉"
+                caption=f"Bienvenido a la familia {user_name}! 🎉"
             )
         except Exception as e:
             await message.reply(f"Error al enviar el GIF de bienvenida: {e}")
