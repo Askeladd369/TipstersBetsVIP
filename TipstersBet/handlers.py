@@ -310,8 +310,6 @@ def register_handlers(app: Client):
         await callback_query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(buttons))
         await callback_query.answer("Botones actualizados.")
 
-
-
     @app.on_message(filters.command("categories") & filters.private)
     async def show_main_buttons(client, message):
         user_id = message.from_user.id
