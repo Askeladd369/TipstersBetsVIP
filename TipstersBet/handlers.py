@@ -7,10 +7,11 @@ import os
 import random, string
 import re
 import pandas as pd
-from pyrogram import Client, filters
+from pyrogram import Client, filters,errors
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from utils import *
 from db import *
+
 
 
 # Función para obtener la conexión a la base de datos
@@ -759,11 +760,16 @@ async def remove_user_from_channels(client: Client, user_id: int):
         channels = cursor.fetchall()
 
     for channel in channels:
+        channel_id = channel[0]
         try:
-            await client.kick_chat_member(channel[0], user_id)
-            logging.info(f"Usuario {user_id} removido del canal {channel[0]}")
+            # Usar ban_chat_member para eliminar al usuario del canal
+            await client.ban_chat_member(channel_id, user_id)
+            logging.info(f"Usuario {user_id} removido del canal {channel_id}")
+            
+            # Desbanear inmediatamente después de eliminar para permitir futuras reintegraciones
+            await unban_user_from_channel(client, user_id, channel_id)
         except Exception as e:
-            logging.error(f"Error al eliminar al usuario {user_id} del canal {channel[0]}: {e}")
+            logging.error(f"Error al eliminar o desbanear al usuario {user_id} del canal {channel_id}: {e}")
 
 # Tarea para ejecutar la verificación de membresías expiradas periódicamente
 async def membership_check_loop(client: Client):
@@ -771,4 +777,11 @@ async def membership_check_loop(client: Client):
         await check_and_remove_expired_users(client)
         await asyncio.sleep(86400)  # Esperar 24 horas entre verificaciones
 
-
+async def unban_user_from_channel(client: Client, user_id: int, channel_id: int):
+    try:
+        await client.unban_chat_member(chat_id=channel_id, user_id=user_id)
+        logging.info(f"Usuario con ID {user_id} ha sido desbaneado del canal {channel_id}.")
+    except errors.UserNotParticipant:
+        logging.info(f"El usuario {user_id} no estaba previamente baneado del canal {channel_id}.")
+    except Exception as e:
+        logging.error(f"Error al intentar desbanear al usuario {user_id} del canal {channel_id}: {e}")
