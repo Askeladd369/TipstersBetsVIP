@@ -396,18 +396,40 @@ def register_handlers(app: Client):
         # Obtener estadísticas
         bank_inicial = stats.get('Bank Inicial', None)
         bank_actual = stats.get('Bank Actual', None)
+        manejo_bank = stats.get('Manejo de Bank', None)
+        utilidad_unidades = stats.get('Utilidad en unidades', None)
         victorias = stats.get('Victorias', None)
         derrotas = stats.get('Derrotas', None)
         efectividad = stats.get('Efectividad', None)
         racha = stats.get('Dias en racha', 0)
+        record_futbol = stats.get('Futbol', None)
+        record_basquetball = stats.get('Basquetball', None)
+        record_americano =stats.get('Americano', None)
+        record_tenis=stats.get('Tenis', None)
+        record_mma =stats.get('MMA', None)
+        record_esports= stats.get('Esports', None)
+        record_pingpong= stats.get('PingPong', None)
+        record_beisbol = stats.get('Beisbol', None)
+        record_hockey= stats.get('Beisbol', None)
 
         # Verificar si las estadísticas son NaN y manejar el caso
         victorias = None if pd.isna(victorias) else int(victorias)
         derrotas = None if pd.isna(derrotas) else int(derrotas)
         bank_inicial = None if pd.isna(bank_inicial) else bank_inicial
         bank_actual = None if pd.isna(bank_actual) else bank_actual
+        manejo_bank = None if pd.isna(manejo_bank) else manejo_bank
+        utilidad_unidades = None if pd.isna(utilidad_unidades) else utilidad_unidades
         efectividad = None if pd.isna(efectividad) else efectividad
         racha = 0 if pd.isna(racha) else int(racha)
+        record_futbol = None if pd.isna(record_futbol) else record_futbol
+        record_basquetball = None if pd.isna(record_basquetball) else record_basquetball
+        record_americano = None if pd.isna(record_americano) else record_americano
+        record_tenis= None if pd.isna(record_tenis) else record_tenis
+        record_mma = None if pd.isna(record_mma) else record_mma
+        record_esports= None if pd.isna(record_esports) else record_esports
+        record_pingpong= None if pd.isna(record_pingpong) else record_pingpong
+        record_beisbol =None if pd.isna(record_beisbol) else record_beisbol
+        record_hockey=None if pd.isna(record_hockey) else record_hockey
 
         # Asignar semáforo
         semaforo = '🟢' if efectividad and efectividad > 65 else '🟡' if efectividad and 50 <= efectividad <= 65 else '🔴'
@@ -416,13 +438,19 @@ def register_handlers(app: Client):
         racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '')
 
         # Crear el mensaje de estadísticas condicionalmente
-        stats_message = f"Tipster: {tipster_name} {semaforo}\n"
+        stats_message = f"🎫{tipster_name} {semaforo}\n"
 
         if bank_inicial is not None:
             stats_message += f"🏦 Bank Inicial: ${bank_inicial:.2f} 💵\n"
 
         if bank_actual is not None:
-            stats_message += f"🏦 Bank Actual: ${bank_actual:.2f} 💵\n"
+            stats_message += f"💰 Bank Actual: ${bank_actual:.2f} 💵\n"
+
+        if manejo_bank is not None:
+            stats_message += f"🧾 Gestion de bank: {manejo_bank}\n"
+
+        if utilidad_unidades is not None:
+            stats_message += f"💎 Utilidad en unidades (Bank de 100U): {utilidad_unidades:.2f}\n"
 
         if victorias is not None:
             stats_message += f"✅ Victorias: {victorias}\n"
@@ -434,7 +462,34 @@ def register_handlers(app: Client):
             stats_message += f"📊 Efectividad: {efectividad}%\n"
 
         if racha > 0:
-            stats_message += f"Racha: {racha} días {racha_emoji}\n"
+            stats_message += f"⭐️ Racha: {racha} días {racha_emoji}\n"
+
+        if record_futbol is not None:
+            stats_message += f"⚽️ Record Futbol: ✅{record_futbol}❌\n"
+        
+        if record_basquetball is not None:
+            stats_message += f"🏀 Record Basquetball: ✅{record_basquetball}❌\n"
+
+        if record_americano is not None:
+            stats_message += f"🏈 Record Americano: ✅{record_americano}❌\n"
+
+        if record_beisbol is not None:
+            stats_message += f"⚾️ Record Beisbol: ✅{record_beisbol}❌\n"
+
+        if record_tenis is not None:
+            stats_message += f"🎾 Record Tenis: ✅{record_tenis}❌\n"
+
+        if record_mma is not None:
+            stats_message += f"🥊 Record MMA: ✅{record_mma}❌\n"
+
+        if record_esports is not None:
+            stats_message += f"🎮 Record Esports: ✅{record_esports}❌\n"
+        
+        if record_pingpong is not None:
+            stats_message += f"🏓 Record PingPong: ✅{record_pingpong}❌\n"
+
+        if record_hockey is not None:
+            stats_message += f"🏒 Record Hockey: ✅{record_hockey}❌\n"
 
         # Crear una lista para agrupar todas las imágenes procesadas
         media_group = []
@@ -542,21 +597,43 @@ def register_handlers(app: Client):
 
         stats = tipster_stats.iloc[0]  # Obtén las estadísticas
 
-        # Obtener estadísticas condicionalmente
-        efectividad = stats.get('Efectividad', None)
+        # Obtener estadísticas
         bank_inicial = stats.get('Bank Inicial', None)
         bank_actual = stats.get('Bank Actual', None)
+        manejo_bank = stats.get('Manejo de Bank', None)
+        utilidad_unidades = stats.get('Utilidad en unidades', None)
         victorias = stats.get('Victorias', None)
         derrotas = stats.get('Derrotas', None)
+        efectividad = stats.get('Efectividad', None)
         racha = stats.get('Dias en racha', 0)
+        record_futbol = stats.get('Futbol', None)
+        record_basquetball = stats.get('Basquetball', None)
+        record_americano =stats.get('Americano', None)
+        record_tenis=stats.get('Tenis', None)
+        record_mma =stats.get('MMA', None)
+        record_esports= stats.get('Esports', None)
+        record_pingpong= stats.get('PingPong', None)
+        record_beisbol = stats.get('Beisbol', None)
+        record_hockey= stats.get('Beisbol', None)
 
-        # Verificar si las estadísticas son NaN y manejarlas
-        bank_inicial = None if pd.isna(bank_inicial) else bank_inicial
-        bank_actual = None if pd.isna(bank_actual) else bank_actual
+        # Verificar si las estadísticas son NaN y manejar el caso
         victorias = None if pd.isna(victorias) else int(victorias)
         derrotas = None if pd.isna(derrotas) else int(derrotas)
+        bank_inicial = None if pd.isna(bank_inicial) else bank_inicial
+        bank_actual = None if pd.isna(bank_actual) else bank_actual
+        manejo_bank = None if pd.isna(manejo_bank) else manejo_bank
+        utilidad_unidades = None if pd.isna(utilidad_unidades) else utilidad_unidades
         efectividad = None if pd.isna(efectividad) else efectividad
         racha = 0 if pd.isna(racha) else int(racha)
+        record_futbol = None if pd.isna(record_futbol) else record_futbol
+        record_basquetball = None if pd.isna(record_basquetball) else record_basquetball
+        record_americano = None if pd.isna(record_americano) else record_americano
+        record_tenis= None if pd.isna(record_tenis) else record_tenis
+        record_mma = None if pd.isna(record_mma) else record_mma
+        record_esports= None if pd.isna(record_esports) else record_esports
+        record_pingpong= None if pd.isna(record_pingpong) else record_pingpong
+        record_beisbol =None if pd.isna(record_beisbol) else record_beisbol
+        record_hockey=None if pd.isna(record_hockey) else record_hockey
 
         # Asignar semáforo
         semaforo = '🟢' if efectividad and efectividad > 65 else '🟡' if efectividad and 50 <= efectividad <= 65 else '🔴'
@@ -565,13 +642,19 @@ def register_handlers(app: Client):
         racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha > 0 else ''
 
         # Crear el mensaje de estadísticas condicionalmente
-        stats_message = f"Tipster: {category} {semaforo}\n"
+        stats_message = f"🎫{category} {semaforo}\n"
 
         if bank_inicial is not None:
             stats_message += f"🏦 Bank Inicial: ${bank_inicial:.2f} 💵\n"
 
         if bank_actual is not None:
-            stats_message += f"🏦 Bank Actual: ${bank_actual:.2f} 💵\n"
+            stats_message += f"💰 Bank Actual: ${bank_actual:.2f} 💵\n"
+
+        if manejo_bank is not None:
+            stats_message += f"🧾 Gestion de bank: {manejo_bank}\n"
+
+        if utilidad_unidades is not None:
+            stats_message += f"💎 Utilidad en unidades (Bank de 100U): {utilidad_unidades:.2f}\n"
 
         if victorias is not None:
             stats_message += f"✅ Victorias: {victorias}\n"
@@ -583,7 +666,34 @@ def register_handlers(app: Client):
             stats_message += f"📊 Efectividad: {efectividad}%\n"
 
         if racha > 0:
-            stats_message += f"Racha: {racha} días {racha_emoji}\n"
+            stats_message += f"⭐️ Racha: {racha} días {racha_emoji}\n"
+
+        if record_futbol is not None:
+            stats_message += f"⚽️ Record Futbol: ✅{record_futbol}❌\n"
+        
+        if record_basquetball is not None:
+            stats_message += f"🏀 Record Basquetball: ✅{record_basquetball}❌\n"
+
+        if record_americano is not None:
+            stats_message += f"🏈 Record Americano: ✅{record_americano}❌\n"
+
+        if record_beisbol is not None:
+            stats_message += f"⚾️ Record Beisbol: ✅{record_beisbol}❌\n"
+
+        if record_tenis is not None:
+            stats_message += f"🎾 Record Tenis: ✅{record_tenis}❌\n"
+
+        if record_mma is not None:
+            stats_message += f"🥊 Record MMA: ✅{record_mma}❌\n"
+
+        if record_esports is not None:
+            stats_message += f"🎮 Record Esports: ✅{record_esports}❌\n"
+        
+        if record_pingpong is not None:
+            stats_message += f"🏓 Record PingPong: ✅{record_pingpong}❌\n"
+
+        if record_hockey is not None:
+            stats_message += f"🏒 Record Hockey: ✅{record_hockey}❌\n"
 
         # Lista para agrupar todas las imágenes procesadas
         media_group = []
