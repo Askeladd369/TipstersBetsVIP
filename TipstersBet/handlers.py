@@ -94,7 +94,7 @@ def register_handlers(app: Client):
             "- Uniéndote a nuestros grupos, donde organizamos a los tipsters por categorías.\n\n"
             
             "🔗 **Enlaces de acceso a nuestros grupos:**\n"
-            "🇲🇽 **Grupo de Mexicanos**: [Unirse](https://t.me/+U4jnQ0zCppU4ZDIx)\n"
+            "🇲🇽 **Grupo de Mexicanos**: [Unirse](https://t.me/+Z9fj5SmR8GdlYjhh)\n"
             "🇺🇸 **Grupo de Extranjeros**: [Unirse](https://t.me/+xgtawqeOAhE2NDgx)\n"
             "⭐️ **Grupo de Stakes 10**: [Unirse](https://t.me/+WOF58ybazGAwODUx)\n"
             "💎 **Grupo de Alta Efectividad**: [Unirse](https://t.me/+vHF5R3P9eMQ2MTQx)\n"
