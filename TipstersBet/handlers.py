@@ -165,8 +165,9 @@ def register_handlers(app: Client):
         invitation_code = args[1].strip()
         await activate_with_invitation_code(client, message, invitation_code)
 
+
     # Handler para mensajes directos que contienen el código de invitación
-    @app.on_message(filters.private & filters.text & ~filters.command & ~filters.media)
+    @app.on_message(filters.private & filters.text & ~filters.command() & ~filters.media)
     async def handle_invitation_code_message(client, message):
         invitation_code = message.text.strip()
 
@@ -175,6 +176,7 @@ def register_handlers(app: Client):
             await activate_with_invitation_code(client, message, invitation_code)
         else:
             await message.reply("Por favor, proporciona un código de invitación válido para activar el bot.")
+
 
 
     @app.on_callback_query(filters.regex(r"admin_menu") & admin_only())
