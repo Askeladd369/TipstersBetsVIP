@@ -166,9 +166,14 @@ def register_handlers(app: Client):
         await activate_with_invitation_code(client, message, invitation_code)
 
 
+
     # Handler para mensajes directos que contienen el código de invitación
-    @app.on_message(filters.private & filters.text & ~filters.command() & ~filters.media)
+    @app.on_message(filters.private & filters.text & ~filters.media)
     async def handle_invitation_code_message(client, message):
+        # Verificar si el mensaje es un comando (comienza con "/")
+        if message.text.startswith("/"):
+            return  # No hacer nada si es un comando
+
         invitation_code = message.text.strip()
 
         # Validar si el mensaje parece ser un código de invitación (ej. 10 caracteres, letras y números)
@@ -176,6 +181,7 @@ def register_handlers(app: Client):
             await activate_with_invitation_code(client, message, invitation_code)
         else:
             await message.reply("Por favor, proporciona un código de invitación válido para activar el bot.")
+
 
 
 
