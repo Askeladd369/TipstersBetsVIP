@@ -68,111 +68,97 @@ def generate_tipster_buttons(tipsters_in_group, user_id, group_button, conn):
 # Registro de handlers en la aplicación
 def register_handlers(app: Client):
 
-    # Handler de comando /start para iniciar la interacción
     @app.on_message(filters.command("start") & filters.private)
     async def start(client, message):
-        user_id = message.from_user.id
+        args = message.text.split()
         gif_path = "C:\\Users\\Administrator\\TipstersBetsVIP\\TipstersBet\\familia.gif"
+        info_text = (
+            "📊 **¿Cómo funciona el grupo VIP?**\n\n"
+            "Con el objetivo de ayudarte a identificar a los tipsters más rentables, contamos con un sistema de *semáforos* que acompañan al nombre de cada tipster:\n"
+            "- Semáforo verde 🟢: Efectividad superior al **70%**.\n"
+            "- Semáforo amarillo 🟡: Efectividad entre **50% y 70%**.\n"
+            "- Semáforo rojo 🔴: Efectividad menor al **50%**.\n\n"
+            "La efectividad es un indicador clave de la precisión y habilidad de los tipsters en sus pronósticos.\n\n"
+            
+            "Además, también evaluamos el *rendimiento a corto plazo* con nuestro sistema de **estrellas** ⭐️:\n"
+            "- Cada estrella indica los días consecutivos de ganancias de un tipster. Si el tipster mantiene una racha positiva, subirá en el ranking con más estrellas ⭐️⭐️, indicando que es confiable seguir sus recomendaciones.\n"
+            "- Por otro lado, si los resultados son negativos, el tipster descenderá en el ranking, lo que nos permite aprovechar las rachas positivas y evitar las negativas.\n\n"
+            
+            "💎 *Grupo Exclusivo 'Alta Efectividad'*\n"
+            "Este grupo está reservado para los tipsters con un historial de aciertos superior al **70%**. Aquí solo compartimos las apuestas de los tipsters más precisos.\n\n"
+            
+            "🔥 De esta manera, garantizamos que sigas las recomendaciones de los expertos que contribuirán significativamente al crecimiento de tu bank.\n\n"
+            
+            "**Modalidades para recibir nuestras apuestas:**\n"
+            "- A través de este bot, usando el comando /categories para activar a los tipsters que quieres recibir.\n"
+            "- Uniéndote a nuestros grupos, donde organizamos a los tipsters por categorías.\n\n"
+            
+            "🔗 **Enlaces de acceso a nuestros grupos:**\n"
+            "🇲🇽 **Grupo de Mexicanos**: [Unirse](https://t.me/+Z9fj5SmR8GdlYjhh)\n"
+            "🇺🇸 **Grupo de Extranjeros**: [Unirse](https://t.me/+xgtawqeOAhE2NDgx)\n"
+            "⭐️ **Grupo de Stakes 10**: [Unirse](https://t.me/+WOF58ybazGAwODUx)\n"
+            "💎 **Grupo de Alta Efectividad**: [Unirse](https://t.me/+vHF5R3P9eMQ2MTQx)\n"
+            "👑 **Los Rey App**: [Unirse](https://t.me/+o4REb6_EYiY1YWUx)\n\n"
+            
+            "_Nota_: Si recibes el mensaje de “límite excedido” de Telegram, simplemente espera un momento y vuelve a solicitar el acceso haciendo clic en el enlace. Serás aceptado por un administrador en breves. 👨‍💻"
+        )
 
-        # Enviar el mensaje de bienvenida y pedir el código de invitación
+        if len(args) < 2:
+            await message.reply("Por favor, proporciona un código de invitación para activar el bot.")
+            return
+
+        invitation_code = args[1].strip()
+        code_data = get_invitation_code(invitation_code)
+
+        if code_data is None:
+            await message.reply("Código de invitación no válido o ya usado.")
+            return
+
+        duration = code_data[0]
+        update_invitation_code_used(invitation_code)
+
+        user_id = message.from_user.id
+        user_name = message.from_user.first_name
+        approved_time = datetime.datetime.now().isoformat()
+
+        # Insertar o actualizar la información del usuario en la base de datos
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR REPLACE INTO users (user_id, first_name, approved, subscription_days, approved_time) 
+                VALUES (?, ?, ?, ?, ?)""",
+                (user_id, user_name, 1, duration, approved_time))
+            conn.commit()
+
+        # Desbanear al usuario del canal privado para permitir su acceso
+        try:
+            # Cargar los canales desde el archivo Excel
+            channels_dict = load_channels_from_excel(config.excel_path)  # Ruta correcta al archivo Excel
+
+            # Desbanear al usuario de todos los canales a los que tiene acceso
+            for channel_id in channels_dict.values():
+                await client.unban_chat_member(chat_id=channel_id, user_id=user_id)
+                logging.info(f"Usuario con ID {user_id} ha sido desbaneado del canal {channel_id}.")
+        except errors.UserNotParticipant:
+            logging.info(f"El usuario {user_id} no estaba previamente baneado de los canales.")
+        except Exception as e:
+            logging.error(f"Error al intentar desbanear al usuario {user_id} de los canales: {e}")
+            await message.reply(f"Error al desbanear al usuario: {e}")
+
+        # Enviar el GIF como bienvenida
         try:
             await client.send_animation(
                 chat_id=message.chat.id,
                 animation=gif_path,
-                caption=(
-                    f"¡Bienvenido! 🎉\n\n"
-                    f"Por favor, proporciona tu **código de invitación** para activar el bot.\n"
-                    f"Escríbelo como un mensaje directo en este chat."
-                )
+                caption=f"Bienvenido a la familia {user_name}! 🎉"
             )
         except Exception as e:
             await message.reply(f"Error al enviar el GIF de bienvenida: {e}")
 
-    # Handler para procesar el código de invitación como un mensaje separado
-    @app.on_message(filters.private & filters.text)
-    async def handle_invitation_code(client, message):
-        # Verificar si el mensaje es un comando (comienza con "/")
-        if message.text.startswith("/"):
-            return  # No hacer nada si es un comando
-
-        invitation_code = message.text.strip()
-
-        # Validar si el mensaje parece ser un código de invitación (ej. 10 caracteres, letras y números)
-        if len(invitation_code) == 10 and invitation_code.isalnum():
-            code_data = get_invitation_code(invitation_code)
-
-            if code_data is None:
-                await message.reply("Código de invitación no válido o ya usado.")
-                return
-
-            duration = code_data[0]
-            update_invitation_code_used(invitation_code)
-
-            user_id = message.from_user.id
-            user_name = message.from_user.first_name
-            approved_time = datetime.datetime.now().isoformat()
-
-            # Insertar o actualizar la información del usuario en la base de datos
-            with get_db_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    INSERT OR REPLACE INTO users (user_id, first_name, approved, subscription_days, approved_time) 
-                    VALUES (?, ?, ?, ?, ?)""",
-                    (user_id, user_name, 1, duration, approved_time))
-                conn.commit()
-
-            # Desbanear al usuario del canal privado para permitir su acceso
-            try:
-                # Cargar los canales desde el archivo Excel
-                channels_dict = load_channels_from_excel(config.excel_path)  # Ruta correcta al archivo Excel
-
-                # Desbanear al usuario de todos los canales a los que tiene acceso
-                for channel_id in channels_dict.values():
-                    await client.unban_chat_member(chat_id=channel_id, user_id=user_id)
-                    logging.info(f"Usuario con ID {user_id} ha sido desbaneado del canal {channel_id}.")
-            except errors.UserNotParticipant:
-                logging.info(f"El usuario {user_id} no estaba previamente baneado de los canales.")
-            except Exception as e:
-                logging.error(f"Error al intentar desbanear al usuario {user_id} de los canales: {e}")
-                await message.reply(f"Error al desbanear al usuario: {e}")
-
-            # Enviar el mensaje de bienvenida adicional
-            info_text = (
-                "📊 **¿Cómo funciona el grupo VIP?**\n\n"
-                "Con el objetivo de ayudarte a identificar a los tipsters más rentables, contamos con un sistema de *semáforos* que acompañan al nombre de cada tipster:\n"
-                "- Semáforo verde 🟢: Efectividad superior al **70%**.\n"
-                "- Semáforo amarillo 🟡: Efectividad entre **50% y 70%**.\n"
-                "- Semáforo rojo 🔴: Efectividad menor al **50%**.\n\n"
-                "La efectividad es un indicador clave de la precisión y habilidad de los tipsters en sus pronósticos.\n\n"
-                
-                "Además, también evaluamos el *rendimiento a corto plazo* con nuestro sistema de **estrellas** ⭐️:\n"
-                "- Cada estrella indica los días consecutivos de ganancias de un tipster. Si el tipster mantiene una racha positiva, subirá en el ranking con más estrellas ⭐️⭐️, indicando que es confiable seguir sus recomendaciones.\n"
-                "- Por otro lado, si los resultados son negativos, el tipster descenderá en el ranking, lo que nos permite aprovechar las rachas positivas y evitar las negativas.\n\n"
-                
-                "💎 *Grupo Exclusivo 'Alta Efectividad'*\n"
-                "Este grupo está reservado para los tipsters con un historial de aciertos superior al **70%**. Aquí solo compartimos las apuestas de los tipsters más precisos.\n\n"
-                
-                "🔥 De esta manera, garantizamos que sigas las recomendaciones de los expertos que contribuirán significativamente al crecimiento de tu bank.\n\n"
-                
-                "**Modalidades para recibir nuestras apuestas:**\n"
-                "- A través de este bot, usando el comando /categories para activar a los tipsters que quieres recibir.\n"
-                "- Uniéndote a nuestros grupos, donde organizamos a los tipsters por categorías.\n\n"
-                
-                "🔗 **Enlaces de acceso a nuestros grupos:**\n"
-                "🇲🇽 **Grupo de Mexicanos**: [Unirse](https://t.me/+Z9fj5SmR8GdlYjhh)\n"
-                "🇺🇸 **Grupo de Extranjeros**: [Unirse](https://t.me/+xgtawqeOAhE2NDgx)\n"
-                "⭐️ **Grupo de Stakes 10**: [Unirse](https://t.me/+WOF58ybazGAwODUx)\n"
-                "💎 **Grupo de Alta Efectividad**: [Unirse](https://t.me/+vHF5R3P9eMQ2MTQx)\n"
-                "👑 **Los Rey App**: [Unirse](https://t.me/+o4REb6_EYiY1YWUx)\n\n"
-                
-                "_Nota_: Si recibes el mensaje de “límite excedido” de Telegram, simplemente espera un momento y vuelve a solicitar el acceso haciendo clic en el enlace. Serás aceptado por un administrador en breves. 👨‍💻"
-            )
-            await message.reply(
-                f"Has activado tu membresía VIP. Tu suscripción durará {duration} días.\n {info_text}" 
-            )
-        else:
-            await message.reply("Por favor, proporciona un código de invitación válido para activar el bot.")
-
+        # Enviar el mensaje de bienvenida adicional
+        await message.reply(
+            f"Has activado tu membresía VIP. Tu suscripción durará {duration} días.\n {info_text}" 
+        )
 
     @app.on_callback_query(filters.regex(r"admin_menu") & admin_only())
     async def show_admin_menu(client, callback_query):
@@ -209,8 +195,8 @@ def register_handlers(app: Client):
                     cursor.execute("INSERT INTO invitation_codes (code, duration, used) VALUES (?, ?, 0)", (code, duration))
                 conn.commit()
             
-            codes_text = "\n".join([f"Envia mensaje a este bot @Tipstersbetsbot con tu código de activación de la siguiente manera: /start {code}\n Duración: {duration} días" for code in codes])
-            await message.reply(f"Códigos de invitación generados:\n{codes_text}")
+            codes_text = "\n".join([f"Envia mensaje a este bot @Tipstersbetsbot con tu código de activación de la siguiente manera:\n/start {code}\n Duración: {duration} días\n " for code in codes])
+            await message.reply(f"{codes_text}")
             user_states.set(message.from_user.id, None)
         except ValueError:
             await message.reply("Por favor, introduce un formato válido: duración,cantidad. Por ejemplo: 30,5")
