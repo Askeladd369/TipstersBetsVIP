@@ -68,7 +68,6 @@ def generate_tipster_buttons(tipsters_in_group, user_id, group_button, conn):
 # Registro de handlers en la aplicación
 def register_handlers(app: Client):
 
-
     # Handler de comando /start para iniciar la interacción
     @app.on_message(filters.command("start") & filters.private)
     async def start(client, message):
@@ -90,8 +89,12 @@ def register_handlers(app: Client):
             await message.reply(f"Error al enviar el GIF de bienvenida: {e}")
 
     # Handler para procesar el código de invitación como un mensaje separado
-    @app.on_message(filters.private & filters.text & ~filters.command() & ~filters.media)
+    @app.on_message(filters.private & filters.text)
     async def handle_invitation_code(client, message):
+        # Verificar si el mensaje es un comando (comienza con "/")
+        if message.text.startswith("/"):
+            return  # No hacer nada si es un comando
+
         invitation_code = message.text.strip()
 
         # Validar si el mensaje parece ser un código de invitación (ej. 10 caracteres, letras y números)
