@@ -104,7 +104,7 @@ def register_handlers(app: Client):
         )
 
         if len(args) < 2:
-            await message.reply("Por favor, proporciona un código de invitación para activar el bot.")
+            await message.reply("Por favor, proporciona un código de invitación para activar el bot de la siguiente manera:\n /start (codigo de invitacion)")
             return
 
         invitation_code = args[1].strip()
@@ -195,7 +195,7 @@ def register_handlers(app: Client):
                     cursor.execute("INSERT INTO invitation_codes (code, duration, used) VALUES (?, ?, 0)", (code, duration))
                 conn.commit()
             
-            codes_text = "\n".join([f"Envia mensaje a este bot @Tipstersbetsbot con tu código de activación de la siguiente manera:\n/start {code}\n Duración: {duration} días\n " for code in codes])
+            codes_text = "\n".join([f"Envia mensaje a este bot @Tipstersbetsbot con tu código de activación de la siguiente manera: \n\n/start {code} \n\n " for code in codes])
             await message.reply(f"{codes_text}")
             user_states.set(message.from_user.id, None)
         except ValueError:
