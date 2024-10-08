@@ -641,14 +641,20 @@ def register_handlers(app: Client):
         # Procesar racha
         racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha > 0 else ''
 
-        # Crear el mensaje de estadísticas condicionalmente
-        stats_message = f"🎫{category} {semaforo}\n"
+        # Solo añade el emoji de racha si la racha es mayor a 0
+        if racha > 0:
+            stats_message = f"🎫 {category} {racha_emoji}\n"
+        else:
+            stats_message = f"🎫 {category}\n"
 
         if bank_inicial is not None:
             stats_message += f"🏦 Bank Inicial: ${bank_inicial:.2f} 💵\n"
 
         if bank_actual is not None:
-            stats_message += f"💰 Bank Actual: ${bank_actual:.2f} 💵\n"
+            stats_message += f"💰 Balance: ${bank_actual:.2f} 💵\n"
+        
+        if efectividad is not None:
+            stats_message += f"{semaforo} Efectividad: {efectividad}%\n"
 
         if manejo_bank is not None:
             stats_message += f"🧾 Gestion de bank: {manejo_bank}\n"
@@ -656,17 +662,14 @@ def register_handlers(app: Client):
         if utilidad_unidades is not None:
             stats_message += f"💎 Utilidad en unidades (Bank de 100U): {utilidad_unidades:.2f}\n"
 
-        if victorias is not None:
-            stats_message += f"✅ Victorias: {victorias}\n"
-
-        if derrotas is not None:
-            stats_message += f"❌ Derrotas: {derrotas}\n"
-
-        if efectividad is not None:
-            stats_message += f"📊 Efectividad: {efectividad}%\n"
-
-        if racha > 0:
-            stats_message += f"⭐️ Racha: {racha} días {racha_emoji}\n"
+        if victorias is not None or derrotas is not None:
+            if victorias is not None and victorias > 0:
+                stats_message += f"{victorias} ✅"
+            if derrotas is not None and derrotas > 0:
+                if victorias is not None and victorias > 0:
+                    stats_message += " - "  # Separador solo si ambos valores están presentes
+                stats_message += f"{derrotas} ❌"
+            stats_message += "\n"  # Nueva línea al final del mensaje de récord
 
         if record_futbol is not None:
             stats_message += f"⚽️ Record Futbol: ✅{record_futbol}❌\n"
