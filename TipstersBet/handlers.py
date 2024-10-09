@@ -459,12 +459,20 @@ def register_handlers(app: Client):
             stats_message += f"💎 Utilidad en unidades (Bank de 100U): {utilidad_unidades:.2f}\n"
 
         if victorias is not None or derrotas is not None:
+            stats_message += "📊 Record: "
+            
             if victorias is not None and victorias > 0:
-                stats_message += f"📊 Record: {victorias} ✅"
+                stats_message += f"{victorias} ✅"
+            else:
+                stats_message += "0 ✅"
+            
+            stats_message += " - "  # Agregar el separador entre victorias y derrotas
+            
             if derrotas is not None and derrotas > 0:
-                if victorias is not None and victorias > 0:
-                    stats_message += " - "  # Separador solo si ambos valores están presentes
-                stats_message += f"📊 Record:{derrotas} ❌"
+                stats_message += f"{derrotas} ❌"
+            else:
+                stats_message += "0 ❌"
+            
             stats_message += "\n"  # Nueva línea al final del mensaje de récord
 
         if record_futbol is not None:
@@ -666,12 +674,20 @@ def register_handlers(app: Client):
             stats_message += f"💎 Utilidad en unidades (Bank de 100U): {utilidad_unidades:.2f}\n"
 
         if victorias is not None or derrotas is not None:
+            stats_message += "📊 Record: "
+            
             if victorias is not None and victorias > 0:
-                stats_message += f"📊 Record: {victorias} ✅"
+                stats_message += f"{victorias} ✅"
+            else:
+                stats_message += "0 ✅"
+            
+            stats_message += " - "  # Agregar el separador entre victorias y derrotas
+            
             if derrotas is not None and derrotas > 0:
-                if victorias is not None and victorias > 0:
-                    stats_message += " - "  # Separador solo si ambos valores están presentes
-                stats_message += f"📊 Record:{derrotas} ❌"
+                stats_message += f"{derrotas} ❌"
+            else:
+                stats_message += "0 ❌"
+            
             stats_message += "\n"  # Nueva línea al final del mensaje de récord
 
         if record_futbol is not None:
