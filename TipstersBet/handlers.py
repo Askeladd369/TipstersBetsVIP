@@ -410,7 +410,7 @@ def register_handlers(app: Client):
         record_esports= stats.get('Esports', None)
         record_pingpong= stats.get('PingPong', None)
         record_beisbol = stats.get('Beisbol', None)
-        record_hockey= stats.get('Beisbol', None)
+        record_hockey= stats.get('Hockey', None)
 
         # Verificar si las estadísticas son NaN y manejar el caso
         victorias = None if pd.isna(victorias) else int(victorias)
@@ -460,11 +460,11 @@ def register_handlers(app: Client):
 
         if victorias is not None or derrotas is not None:
             if victorias is not None and victorias > 0:
-                stats_message += f"{victorias} ✅"
+                stats_message += f"📊 Record: {victorias} ✅"
             if derrotas is not None and derrotas > 0:
                 if victorias is not None and victorias > 0:
                     stats_message += " - "  # Separador solo si ambos valores están presentes
-                stats_message += f"{derrotas} ❌"
+                stats_message += f"📊 Record:{derrotas} ❌"
             stats_message += "\n"  # Nueva línea al final del mensaje de récord
 
         if record_futbol is not None:
@@ -617,7 +617,7 @@ def register_handlers(app: Client):
         record_esports= stats.get('Esports', None)
         record_pingpong= stats.get('PingPong', None)
         record_beisbol = stats.get('Beisbol', None)
-        record_hockey= stats.get('Beisbol', None)
+        record_hockey= stats.get('Hockey', None)
 
         # Verificar si las estadísticas son NaN y manejar el caso
         victorias = None if pd.isna(victorias) else int(victorias)
@@ -667,11 +667,11 @@ def register_handlers(app: Client):
 
         if victorias is not None or derrotas is not None:
             if victorias is not None and victorias > 0:
-                stats_message += f"{victorias} ✅"
+                stats_message += f"📊 Record: {victorias} ✅"
             if derrotas is not None and derrotas > 0:
                 if victorias is not None and victorias > 0:
                     stats_message += " - "  # Separador solo si ambos valores están presentes
-                stats_message += f"{derrotas} ❌"
+                stats_message += f"📊 Record:{derrotas} ❌"
             stats_message += "\n"  # Nueva línea al final del mensaje de récord
 
         if record_futbol is not None:
