@@ -450,7 +450,7 @@ def register_handlers(app: Client):
             stats_message += f"💰 Balance: ${bank_actual:.2f} 💵\n"
         
         if efectividad is not None:
-            stats_message += f"{semaforo} Efectividad: {efectividad}%\n"
+            stats_message += f"{semaforo} Efectividad: {efectividad:2f}%\n"
 
         if manejo_bank is not None:
             stats_message += f"🧾 Gestion de bank: {manejo_bank}\n"
@@ -665,7 +665,7 @@ def register_handlers(app: Client):
             stats_message += f"💰 Balance: ${bank_actual:.2f} 💵\n"
         
         if efectividad is not None:
-            stats_message += f"{semaforo} Efectividad: {efectividad}%\n"
+            stats_message += f"{semaforo} Efectividad: {efectividad:.2f}%\n"
 
         if manejo_bank is not None:
             stats_message += f"🧾 Gestion de bank: {manejo_bank}\n"
