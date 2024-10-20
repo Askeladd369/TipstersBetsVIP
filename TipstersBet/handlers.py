@@ -444,13 +444,13 @@ def register_handlers(app: Client):
         if bank_inicial is not None:
             stats_message += f"🏦 Bank Inicial: ${bank_inicial:.2f} 💵\n"
 
-        if bank_actual is not None and bank_inicial is not None:
-            # Comparar bank actual con bank inicial
-            diferencia = bank_actual - bank_inicial
-            simbolo = "+" if diferencia > 0 else "-" if diferencia < 0 else ""
+        if bank_actual is not None:
+            # Formatear el mensaje de bank actual con el símbolo correspondiente
+            simbolo = "+" if bank_actual > 0 else ""
             
-            # Formatear el mensaje de bank actual con el símbolo y el valor absoluto de la diferencia
-            stats_message += f"💰 Balance: {simbolo}${abs(bank_actual):.2f} 💵\n"
+            # Mostrar el valor de bank_actual tal como está, añadiendo el símbolo si es positivo
+            stats_message += f"💰 Balance: {simbolo}${bank_actual:.2f} 💵\n"
+
         
         if efectividad is not None:
             stats_message += f"{semaforo} Efectividad: {int(efectividad)}%\n"
