@@ -12,8 +12,6 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMedi
 from utils import *
 from db import *
 
-
-
 # Función para obtener la conexión a la base de datos
 def get_db_connection():
     return sqlite3.connect("bot_database.db")
@@ -94,11 +92,13 @@ def register_handlers(app: Client):
             "- Uniéndote a nuestros grupos, donde organizamos a los tipsters por categorías.\n\n"
             
             "🔗 **Enlaces de acceso a nuestros grupos:**\n"
-            "🇲🇽 **Grupo de Mexicanos**: [Unirse](https://t.me/+Z9fj5SmR8GdlYjhh)\n"
-            "🇺🇸 **Grupo de Extranjeros**: [Unirse](https://t.me/+xgtawqeOAhE2NDgx)\n"
-            "⭐️ **Grupo de Stakes 10**: [Unirse](https://t.me/+WOF58ybazGAwODUx)\n"
+            "🇲🇽 **Grupo de Nacionales**: [Unirse](https://t.me/+Z9fj5SmR8GdlYjhh)\n"
+            "🇺🇸 **Grupo de Americanos**: [Unirse](https://t.me/+xgtawqeOAhE2NDgx)\n"
+            "⭐️ **Grupo de Stakes 10 y garantizados**: [Unirse](https://t.me/+WOF58ybazGAwODUx)\n"
             "💎 **Grupo de Alta Efectividad**: [Unirse](https://t.me/+vHF5R3P9eMQ2MTQx)\n"
             "👑 **Los Rey App**: [Unirse](https://t.me/+o4REb6_EYiY1YWUx)\n\n"
+            "🎰 **Grupo Extranjeros**: [Unirse](https://t.me/+BifOpvJrK_M0NWIx)\n"
+            "🪜 **Grupo de Retos escalera**: [Unirse](https://t.me/+xMODO227vbk3NzUx)\n"
             
             "_Nota_: Si recibes el mensaje de “límite excedido” de Telegram, simplemente espera un momento y vuelve a solicitar el acceso haciendo clic en el enlace. Serás aceptado por un administrador en breves. 👨‍💻"
         )
@@ -298,7 +298,6 @@ def register_handlers(app: Client):
         # Actualizar los botones inmediatamente para reflejar el cambio en la interfaz
         await update_tipster_buttons(client, callback_query)
 
-
     async def update_tipster_buttons(client, callback_query):
         # Recargar los grupos y los tipsters del Excel
         tipsters_df, grupos = load_tipsters_from_excel(config.excel_path)
@@ -373,7 +372,6 @@ def register_handlers(app: Client):
         # Sincronización instantánea: Actualizar botones con el nuevo estado
         await update_tipster_buttons(client, callback_query)
 
-
     @app.on_message(filters.command("categories") & filters.private)
     async def show_main_buttons(client, message):
         user_id = message.from_user.id
@@ -446,8 +444,13 @@ def register_handlers(app: Client):
         if bank_inicial is not None:
             stats_message += f"🏦 Bank Inicial: ${bank_inicial:.2f} 💵\n"
 
-        if bank_actual is not None:
-            stats_message += f"💰 Balance: ${bank_actual:.2f} 💵\n"
+        if bank_actual is not None and bank_inicial is not None:
+            # Comparar bank actual con bank inicial
+            diferencia = bank_actual - bank_inicial
+            simbolo = "+" if diferencia > 0 else "-" if diferencia < 0 else ""
+            
+            # Formatear el mensaje de bank actual con el símbolo y el valor absoluto de la diferencia
+            stats_message += f"💰 Balance: {simbolo}${abs(bank_actual):.2f} 💵\n"
         
         if efectividad is not None:
             stats_message += f"{semaforo} Efectividad: {int(efectividad)}%\n"
@@ -564,210 +567,14 @@ def register_handlers(app: Client):
         # Enviar al canal de alta efectividad si corresponde
         if efectividad and efectividad > 65:
             await client.send_media_group(config.channel_alta_efectividad, media_group)
-
-
-            
-    # Handler para grupos de imágenes
-    @app.on_message((filters.media_group | filters.photo) & admin_only())
-    async def handle_image_group(client, message):
+      
+    @app.on_message((filters.media_group | filters.photo) & (filters.chat(config.CANAL_PRIVADO_ID) | admin_only()))
+    async def handle_images(client, message):
         excel_file = config.excel_path
         tipsters_df, _ = load_tipsters_from_excel(excel_file)
         channels_dict = load_channels_from_excel(excel_file)
 
-        # Manejar correctamente el grupo de medios
-        if message.media_group_id:
-            if not hasattr(client, 'media_groups_processed'):
-                client.media_groups_processed = {}
-
-            if message.media_group_id in client.media_groups_processed:
-                return
-
-            client.media_groups_processed[message.media_group_id] = True
-
-            # Obtener todo el grupo de medios
-            media_group_content = await client.get_media_group(message.chat.id, message.id)
-            # Tomar el caption de la primera imagen del grupo
-            caption = media_group_content[0].caption if media_group_content[0].caption else None
-        else:
-            caption = message.caption
-
-        # Verificar si el caption existe
-        if not caption:
-            await message.reply("Por favor, añade el nombre del tipster a la(s) imagen(es).")
-            return
-
-        # Tomar el nombre del tipster desde el caption
-        category = caption.strip()
-
-        # Buscar estadísticas del tipster
-        tipster_stats = tipsters_df[tipsters_df['Nombre'].str.lower() == category.lower()]
-
-        if tipster_stats.empty:
-            await message.reply(f"No se encontraron estadísticas para el tipster '{category}'.")
-            return
-
-        stats = tipster_stats.iloc[0]  # Obtén las estadísticas
-
-        # Obtener estadísticas
-        bank_inicial = stats.get('Bank Inicial', None)
-        bank_actual = stats.get('Bank Actual', None)
-        manejo_bank = stats.get('Manejo de Bank', None)
-        utilidad_unidades = stats.get('Utilidad en unidades', None)
-        victorias = stats.get('Victorias', None)
-        derrotas = stats.get('Derrotas', None)
-        efectividad = stats.get('Efectividad', None)
-        racha = stats.get('Dias en racha', 0)
-        record_futbol = stats.get('Futbol', None)
-        record_basquetball = stats.get('Basquetball', None)
-        record_americano =stats.get('Americano', None)
-        record_tenis=stats.get('Tenis', None)
-        record_mma =stats.get('MMA', None)
-        record_esports= stats.get('Esports', None)
-        record_pingpong= stats.get('PingPong', None)
-        record_beisbol = stats.get('Beisbol', None)
-        record_hockey= stats.get('Hockey', None)
-
-        # Verificar si las estadísticas son NaN y manejar el caso
-        victorias = None if pd.isna(victorias) else int(victorias)
-        derrotas = None if pd.isna(derrotas) else int(derrotas)
-        bank_inicial = None if pd.isna(bank_inicial) else bank_inicial
-        bank_actual = None if pd.isna(bank_actual) else bank_actual
-        manejo_bank = None if pd.isna(manejo_bank) else manejo_bank
-        utilidad_unidades = None if pd.isna(utilidad_unidades) else utilidad_unidades
-        efectividad = None if pd.isna(efectividad) else efectividad
-        racha = 0 if pd.isna(racha) else int(racha)
-        record_futbol = None if pd.isna(record_futbol) else record_futbol
-        record_basquetball = None if pd.isna(record_basquetball) else record_basquetball
-        record_americano = None if pd.isna(record_americano) else record_americano
-        record_tenis= None if pd.isna(record_tenis) else record_tenis
-        record_mma = None if pd.isna(record_mma) else record_mma
-        record_esports= None if pd.isna(record_esports) else record_esports
-        record_pingpong= None if pd.isna(record_pingpong) else record_pingpong
-        record_beisbol =None if pd.isna(record_beisbol) else record_beisbol
-        record_hockey=None if pd.isna(record_hockey) else record_hockey
-
-        # Asignar semáforo
-        semaforo = '🟢' if efectividad and efectividad > 65 else '🟡' if efectividad and 50 <= efectividad <= 65 else '🔴'
-
-        # Procesar racha
-        racha_emoji = '🌟' * min(racha, 4) + ('🎯' if racha >= 5 else '') if racha > 0 else ''
-
-        # Solo añade el emoji de racha si la racha es mayor a 0
-        if racha > 0:
-            stats_message = f"🎫 {category} {racha_emoji}\n"
-        else:
-            stats_message = f"🎫 {category}\n"
-
-        if bank_inicial is not None:
-            stats_message += f"🏦 Bank Inicial: ${bank_inicial:.2f} 💵\n"
-
-        if bank_actual is not None:
-            stats_message += f"💰 Balance: ${bank_actual:.2f} 💵\n"
-        
-        if efectividad is not None:
-            stats_message += f"{semaforo} Efectividad: {efectividad:.2f}%\n"
-
-        if manejo_bank is not None:
-            stats_message += f"🧾 Gestion de bank: {manejo_bank}\n"
-
-        if utilidad_unidades is not None:
-            stats_message += f"💎 Utilidad en unidades (Bank de 100U): {utilidad_unidades:.2f}\n"
-
-        if victorias is not None or derrotas is not None:
-            stats_message += "📊 Record: "
-            
-            if victorias is not None and victorias > 0:
-                stats_message += f"{victorias} ✅"
-            else:
-                stats_message += "0 ✅"
-            
-            stats_message += " - "  # Agregar el separador entre victorias y derrotas
-            
-            if derrotas is not None and derrotas > 0:
-                stats_message += f"{derrotas} ❌"
-            else:
-                stats_message += "0 ❌"
-            
-            stats_message += "\n"  # Nueva línea al final del mensaje de récord
-
-        if record_futbol is not None:
-            stats_message += f"⚽️ Record Futbol: ✅{record_futbol}❌\n"
-        
-        if record_basquetball is not None:
-            stats_message += f"🏀 Record Basquetball: ✅{record_basquetball}❌\n"
-
-        if record_americano is not None:
-            stats_message += f"🏈 Record Americano: ✅{record_americano}❌\n"
-
-        if record_beisbol is not None:
-            stats_message += f"⚾️ Record Beisbol: ✅{record_beisbol}❌\n"
-
-        if record_tenis is not None:
-            stats_message += f"🎾 Record Tenis: ✅{record_tenis}❌\n"
-
-        if record_mma is not None:
-            stats_message += f"🥊 Record MMA: ✅{record_mma}❌\n"
-
-        if record_esports is not None:
-            stats_message += f"🎮 Record Esports: ✅{record_esports}❌\n"
-        
-        if record_pingpong is not None:
-            stats_message += f"🏓 Record PingPong: ✅{record_pingpong}❌\n"
-
-        if record_hockey is not None:
-            stats_message += f"🏒 Record Hockey: ✅{record_hockey}❌\n"
-
-        # Lista para agrupar todas las imágenes procesadas
-        media_group = []
-
-        # Procesar imágenes según si es un grupo de medios o una sola foto
-        if message.media_group_id:
-            for media in media_group_content:
-                if media.photo:
-                    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                        photo = await client.download_media(media.photo.file_id, file_name=tmp_file.name)
-                        watermarked_image = add_watermark(photo, config.watermark_path, semaforo, racha)
-                        media_group.append(InputMediaPhoto(watermarked_image, caption=stats_message if len(media_group) == 0 else None))
-                    os.remove(tmp_file.name)
-        else:
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
-                watermarked_image = add_watermark(photo, config.watermark_path, semaforo, racha)
-                media_group.append(InputMediaPhoto(watermarked_image, caption=stats_message))
-            os.remove(tmp_file.name)
-
-        if not media_group:
-            await message.reply("No se encontraron fotos en el mensaje.")
-            return
-
-        # Enviar el grupo de medios a los usuarios suscritos
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (category,))
-            users = cursor.fetchall()
-
-            for user in users:
-                await client.send_media_group(user[0], media_group)
-
-        # Enviar al canal correspondiente
-        group_name = stats.get('Grupo', '').lower()
-        channel_id = channels_dict.get(group_name)
-        if channel_id:
-            await client.send_media_group(channel_id, media_group)
-
-        # Enviar al canal de alta efectividad si corresponde
-        if efectividad and efectividad > 65 and 'alta efectividad' in channels_dict:
-            await client.send_media_group(channels_dict['alta efectividad'], media_group)
-
-        # Limpiar el registro de media group procesado
-        if message.media_group_id:
-            del client.media_groups_processed[message.media_group_id]
-
-
-
-    @app.on_message(filters.channel & filters.chat(config.CANAL_PRIVADO_ID))
-    async def handle_channel_images(client, message):
-        # Manejar correctamente el grupo de medios
+        # Verificar si es un grupo de medios o una sola imagen
         if message.media_group_id:
             if not hasattr(client, 'media_groups_processed'):
                 client.media_groups_processed = {}
@@ -775,52 +582,29 @@ def register_handlers(app: Client):
             # Evitar procesar el grupo de medios más de una vez
             if message.media_group_id in client.media_groups_processed:
                 return
-
             client.media_groups_processed[message.media_group_id] = True
 
             # Obtener todo el grupo de medios
-            media_group = await client.get_media_group(message.chat.id, message.id)
+            media_group_content = await client.get_media_group(message.chat.id, message.id)
 
-            # Tomar el caption de la primera imagen (se aplicará a todas las imágenes del grupo)
-            caption = media_group[0].caption if media_group[0].caption else None
-            if not caption:
-                await message.reply("No se detectó nombre de tipster en las imágenes.")
-                return
-
-            # Cargar las estadísticas de los tipsters y el diccionario de canales una sola vez
-            tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
-            channels_dict = load_channels_from_excel(config.excel_path)
-
-            # Lista para almacenar todas las imágenes procesadas
-            processed_media_group = []
-
-            # Procesar todas las imágenes del grupo de medios
-            for media in media_group:
-                # Aquí deberías procesar cada imagen (por ejemplo, añadir la marca de agua)
-                # Agrega la imagen procesada a la lista
-                processed_media_group.append(media)
-
-            # Llamar a la función una sola vez para todo el grupo de medios procesado
-            await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
-
+            # Usar el caption de la primera imagen del grupo
+            caption = media_group_content[0].caption if media_group_content[0].caption else None
         else:
-            # Procesar una sola imagen si no es un grupo de medios
+            # Procesar una sola imagen
             caption = message.caption
-            if not caption:
-                await message.reply("No se detectó nombre de tipster en la imagen.")
-                return
 
-            # Cargar las estadísticas de los tipsters y el diccionario de canales
-            tipsters_df, _ = load_tipsters_from_excel(config.excel_path)
-            channels_dict = load_channels_from_excel(config.excel_path)
+        # Verificar si se proporcionó un nombre de tipster en el caption
+        if not caption:
+            await message.reply("Por favor, añade el nombre del tipster a la(s) imagen(es).")
+            return
 
-            # Procesar la imagen
-            await process_image_and_send(client, message, caption.strip(), tipsters_df, channels_dict)
+        # Pasar el procesamiento de las imágenes y el envío a `process_image_and_send`
+        tipster_name = caption.strip()
+        await process_image_and_send(client, message, tipster_name, tipsters_df, channels_dict)
 
         # Limpiar el registro del media group para evitar duplicados
-        if message.media_group_id and message.media_group_id in client.media_groups_processed:
+        if message.media_group_id:
             del client.media_groups_processed[message.media_group_id]
-
 
     @app.on_callback_query(filters.regex(r"review_users") & admin_only())
     async def review_users(client, callback_query):
@@ -854,7 +638,6 @@ def register_handlers(app: Client):
         # Enviar el mensaje con los botones de los usuarios
         await callback_query.message.edit_text("Usuarios suscritos:", reply_markup=InlineKeyboardMarkup(buttons))
         await callback_query.answer()
-
 
     @app.on_callback_query(filters.regex(r"upload_excel") & admin_only())
     async def prompt_upload_excel(client, callback_query):
@@ -898,7 +681,6 @@ def register_handlers(app: Client):
         except Exception as e:
             print(f"Error al aprobar la solicitud de {join_request.from_user.first_name}: {e}")
 
-        
     @app.on_callback_query(filters.regex(r"remove_(\d+)") & admin_only())
     async def remove_user_callback(client, callback_query):
         user_id = int(callback_query.data.split("_")[1])
@@ -922,7 +704,6 @@ def register_handlers(app: Client):
             conn.commit()
 
         await callback_query.answer(f"Usuario {user_id} eliminado del bot y de los canales.")
-
 
 # Función para eliminar usuarios de los canales cuando expira su suscripción
 async def check_and_remove_expired_users(client: Client):
