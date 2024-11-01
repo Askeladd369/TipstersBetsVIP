@@ -508,50 +508,44 @@ def register_handlers(app: Client):
         # Crear una lista para agrupar todas las imágenes procesadas
         media_group = []
 
-        # Verificar si el mensaje contiene una imagen (foto) o es un media group
+        # Procesar las imágenes y añadirles la marca de agua
         if message.media_group_id:
-            # Obtener todas las imágenes del media group
             media_group_content = await client.get_media_group(message.chat.id, message.id)
 
-            # Procesar cada imagen
             for idx, media in enumerate(media_group_content):
                 if media.photo:
                     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                         photo = await client.download_media(media.photo.file_id, file_name=tmp_file.name)
                         watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
-
-                        # Si es la primera imagen, agregar el caption
                         media_group.append(InputMediaPhoto(watermarked_image, caption=stats_message if idx == 0 else None))
-
                     os.remove(tmp_file.name)
         elif message.photo:
-            # Procesar una sola imagen
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 photo = await client.download_media(message.photo.file_id, file_name=tmp_file.name)
                 watermarked_image = add_watermark(photo, config.watermark_path, racha_emoji, racha)
-
-                # Crear el InputMediaPhoto para una sola imagen con el caption
                 media_group.append(InputMediaPhoto(watermarked_image, caption=stats_message))
-
             os.remove(tmp_file.name)
 
         if not media_group:
             await message.reply("No se encontraron fotos en el mensaje.")
             return
 
-        # Enviar las imágenes a los usuarios suscritos como un grupo de medios
+        # Enviar las imágenes a los usuarios suscritos
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT user_id FROM user_tipsters WHERE tipster_name = ?", (tipster_name,))
             users = cursor.fetchall()
 
             for user in users:
-                await client.send_media_group(user[0], media_group)
+                try:
+                    await client.send_media_group(user[0], media_group)
+                except errors.UserIsBlocked:
+                    logging.info(f"El usuario {user[0]} ha bloqueado al bot y no se le enviarán las imágenes.")
+                except Exception as e:
+                    logging.error(f"Error al enviar imágenes al usuario {user[0]}: {e}")
 
         # Obtener el nombre del grupo desde las estadísticas del tipster
         group_name = stats.get('Grupo', '').strip()
-
-        # Buscar el ID del canal correspondiente desde el diccionario de canales
         channel_id = channels_dict.get(group_name)
 
         if not channel_id:
@@ -566,8 +560,11 @@ def register_handlers(app: Client):
 
         # Enviar al canal de alta efectividad si corresponde
         if efectividad and efectividad > 65:
-            await client.send_media_group(config.channel_alta_efectividad, media_group)
-      
+            try:
+                await client.send_media_group(config.channel_alta_efectividad, media_group)
+            except Exception as e:
+                logging.error(f"Error al enviar al canal de alta efectividad: {e}")
+        
     @app.on_message((filters.media_group | filters.photo) & (filters.chat(config.CANAL_PRIVADO_ID) | admin_only()))
     async def handle_images(client, message):
         excel_file = config.excel_path
